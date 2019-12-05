@@ -12,7 +12,7 @@ c0是一個簡單的學習用C編譯器，輸入為單一C原始檔，輸出為[
 ```bash
     make            #輸出為AST樹形式(計畫刪除)
     make sexp       #輸出為S表達式形式之AST
-    make asm        #輸出Mano\_machine之組合語言
+    make asm        #輸出Mano_machine之組合語言
 ```
 以上輸入皆為stdin，輸出為stdout
 輸出s表達式AST為未格式化之形式，可以用[sexp](https://github.com/hwei115j/sexp)格式化
