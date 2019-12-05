@@ -1,13 +1,13 @@
 # C0
 
-### 介紹
+## 介紹：
 
 c0是一個簡單的學習用C編譯器，輸入為單一C原始檔，輸出為[Mano\_machine](https://en.wikipedia.org/wiki/Mano_machine)組合語言
 也可以輸出S-expressions形式之AST
 
 大量參考成大jserv的[MazuCC](https://github.com/jserv/MazuCC)
 
-### 用法
+## 用法：
 
 ```bash
     make            #輸出為AST樹形式(計畫刪除)
@@ -17,14 +17,14 @@ c0是一個簡單的學習用C編譯器，輸入為單一C原始檔，輸出為[
 以上輸入皆為stdin，輸出為stdout
 輸出s表達式AST為未格式化之形式，可以用[sexp](https://github.com/hwei115j/sexp)格式化
 
-### 目前進度
+## 目前進度：
 
 - 完成部份前端，且能輸出S表達式AST
 - 變數類型只有int一種
 - for、if部份完成，判斷只有變數為零為false其餘皆為true
 - 函式宣告和呼叫僅能解析回傳類型，不能解析傳入變數
 
-### demo
+## demo：
 
 ```bash
 make sexp
