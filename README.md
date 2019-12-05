@@ -53,8 +53,6 @@ int main()
 
 out.c
 ```C
-//out.c
-
 (AST_FUNC ((size 4) func)
           (AST_COMPOUND (AST_DECL (= ((size 4) a) (+ 1 (* 2 3))))
                         (AST_RETURN (* ((size 4) a) 10))))
