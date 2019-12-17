@@ -3,8 +3,8 @@
 #include <string.h>
 #include "c0.h"
 
-static Ctype *ctype_int = &(Ctype){CTYPE_INT, 4, NULL};
-static Ctype *ctype_long = &(Ctype){CTYPE_LONG, 8, NULL};
+static Ctype *ctype_int = &(Ctype){CTYPE_INT, 2, NULL};
+static Ctype *ctype_long = &(Ctype){CTYPE_LONG, 4, NULL};
 static Ctype *ctype_char = &(Ctype){CTYPE_CHAR, 1, NULL};
 static Ctype *ctype_float = &(Ctype){CTYPE_FLOAT, 4, NULL};
 static Ctype *ctype_double = &(Ctype){CTYPE_DOUBLE, 8, NULL};
@@ -52,6 +52,7 @@ static Ast *selection_stmt();
 static Ast *ret_stmt();
 static Ast *ident_or_func(char *);
 static Ast *iteration_stmt();
+static Ast *while_stmt();
 
 static Ast *expr()
 {
@@ -277,6 +278,9 @@ static Ast *stmt()
     else if(idcmp(tok, "for")) {
         return iteration_stmt();
     }
+    else if(idcmp(tok, "while")) {
+        return while_stmt();
+    }
     else if(idcmp(tok, "return")) {
         return ret_stmt();
     }
@@ -335,33 +339,33 @@ static Ast *ast_decl(Ast *var, Ast *init)
 static Ast *selection_stmt()
 {
     Ast *r = new_ast();
+
     r->type = AST_IF;
     expect('(');
     r->cond = expr();
     expect(')');
-    //token *tok = read_token();
     r->then = stmt();
-    /*
-    if(is_punct(tok, '{'))
-        r->then = compound_stmt();
-    else {
-        unget_token(tok);
-        r->then = decl_or_stmt();
+    if(idcmp(peek_token(), "else")) {
+        read_token();
+        r->els = stmt();
     }
-    */
+
     return r;
 }
 static Ast *ret_stmt()
 {
     Ast *r = new_ast();
+
     r->type = AST_RETURN;
     r->retval = expr(); 
     expect(';');
+
     return r;
 }
 static Ast *iteration_stmt()
 {
     Ast *r = new_ast();
+
     r->type = AST_FOR;
     expect('(');
     token *tok = read_token();
@@ -395,6 +399,19 @@ static Ast *iteration_stmt()
     }
     expect(')');
     r->forbody = stmt();
+
+    return r;
+}
+
+static Ast *while_stmt()
+{
+    Ast *r = new_ast();
+
+    r->type = AST_WHILE;
+    expect('(');
+    r->whilecond = expr();
+    expect(')');
+    r->whilebody = stmt();
 
     return r;
 }

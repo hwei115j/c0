@@ -23,6 +23,7 @@ enum {
     AST_IF,
     AST_TERNARY,
     AST_FOR,
+    AST_WHILE,
     AST_RETURN,
     AST_COMPOUND_STMT,
     AST_STRUCT_REF,
@@ -138,7 +139,11 @@ typedef struct __Ast {
             struct __Ast *forstep;
             struct __Ast *forbody;
         };
-
+        /* while statement */
+        struct {
+            struct __Ast *whilecond;
+            struct __Ast *whilebody;
+        }; 
         /* return statement */
         struct __Ast *retval;
 

@@ -20,9 +20,11 @@ c0是一個簡單的學習用C編譯器，輸入為單一C原始檔，輸出為[
 ## 目前進度：
 
 - 完成部份前端，且能輸出S表達式AST
-- 變數類型只有int一種
-- for、if部份完成，判斷只有變數為零為false其餘皆為true
-- 函式宣告和呼叫僅能解析回傳類型，不能解析傳入變數
+- 可以解析char、int、long、float、double等型態
+- 可以解析if、while、for、return等關鍵字
+- 可以宣告function並可以解析function call
+- 目前表達式判斷僅可判斷是否為0
+- func.s為轉換組合語言嘗試
 
 ## demo：
 
@@ -31,18 +33,29 @@ make sexp
 ./sexp < in.c | ./style > out.c
 ```
 
-in.c
 ```C
 int func()
 {
     int a = 1+2*3;
     return a*10;
 }
+
 int main()
 {
     int i = 0;
+    float i1 = 0;
+    char i2 = 0;
+    double i3 = 0;
+
     int sum = 0;
-    if(sum) {
+    if(sum) 
+        func();
+    else {
+        10*func()+10;
+        func();
+    }
+    while(i) {
+        i = i + 1;
         func();
     }
     for(i = 100; i; i = i -1)
@@ -51,21 +64,26 @@ int main()
 }
 ```
 
-out.c
-```C
-(AST_FUNC ((size 4) func)
-          (AST_COMPOUND (AST_DECL (= ((size 4) a) (+ 1 (* 2 3))))
-                        (AST_RETURN (* ((size 4) a) 10))))
-(AST_FUNC ((size 4) main)
-          (AST_COMPOUND (AST_DECL (= ((size 4) i) 0))
-                        (AST_DECL (= ((size 4) sum) 0))
-                        (AST_IF (COND ((size 4) sum))
-                                (THEN (AST_COMPOUND (AST_FUNCALL func)))
-                                (ELSE))
-                        (AST_FOR (INIT (= ((size 4) i) 100))
-                                 (COND ((size 4) i))
-                                 (STEP (= ((size 4) i) (- ((size 4) i) 1)))
-                                 (BODY (= ((size 4) sum) (+ ((size 4) sum) ((size 4) i)))))
-                        (AST_RETURN ((size 4) sum)))) 
+```lisp
+(AST_FUNC ((int 2) func)
+          (AST_DECL (= (int a) (+ 1 (* 2 3))))
+          (AST_RETURN (* (int a) 10)))
+(AST_FUNC ((int 2) main)
+          (AST_DECL (= (int i) 0))
+          (AST_DECL (= (float i1) 0))
+          (AST_DECL (= (char i2) 0))
+          (AST_DECL (= (double i3) 0))
+          (AST_DECL (= (int sum) 0))
+          (AST_IF (COND (int sum))
+                  (THEN (AST_FUNCALL func))
+                  (ELSE (+ (* 10 (AST_FUNCALL func)) 10)
+                        (AST_FUNCALL func)))
+          (AST_WHILE (COND (int i))
+                     (BODY (= (int i) (+ (int i) 1))
+                           (AST_FUNCALL func)))
+          (AST_FOR (INIT (= (int i) 100))
+                   (COND (int i))
+                   (STEP (= (int i) (- (int i) 1)))
+                   (BODY (= (int sum) (+ (int sum) (int i)))))
+          (AST_RETURN (int sum))) 
 ```
-
