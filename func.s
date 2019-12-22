@@ -70,6 +70,7 @@ main,   LDA     2
         BSZ     PUSH
         LDA     add
         BSZ     CALL
+        OUT
         BSZ     RET
 
 add,    LDA     BP
@@ -82,7 +83,6 @@ add,    LDA     BP
         POP
         ADD     R0      I
         BSA     RET
-
         LDA     main
         BSZ     CALL
         HLT
