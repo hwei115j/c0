@@ -1,47 +1,8 @@
-        LDA 10
-        BSA PUSH
-        BSA fib
+        BSA func
+        ADD NUM
+        OUT
         HLT
         ORG 1000
-//fib(n) = fib(n-1) + fib(n-2)
-//n = 0 | n = 1 return n 
-fib,    DEC 0
-        LDA fib
-        BSA CALL
-        LDA BP
-        ADD N4
-        STA R0
-        LDA R0 I
-        SZA
-        BUN L1
-        BSA RET
-L1,     BSA PUSH
-        ADD N1
-        SZA
-        BUN L2
-        INC
-        BSA RET
-L2,     LDA BP
-        STA R0
-        LDA R0 I
-        ADD N1
-        BSA PUSH
-        BSA fib
-        BSA PUSH
-        LDA BP
-        STA R0
-        LDA R0 I
-        ADD N2
-        BSA PUSH
-        BSA fib
-        BSA PUSH
-        LDA SP
-        ADD N3
-        STA R0
-        BSA POP
-        ADD R0 I
-        BSA RET
-
 
 BP,     DEC 3999
 SP,     DEC 3999
@@ -84,14 +45,14 @@ POP,    DEC 0       //將mem[--SP]讀到AC
         LDA SP I
         BUN POP I
 
-CALL,   DEC 0       //呼叫AC儲存的function位址
+SAVE,   DEC 0       //呼叫AC儲存的function位址
         BSA PUSH
         LDA BP
         BSA PUSH
         LDA SP
         STA BP
         BSA PUSH
-        BUN CALL I
+        BUN SAVE I
 //  argc[n]
 //  argc[...]
 //  argc[0]                     -4
@@ -112,4 +73,19 @@ RET,    DEC 0       //將return值存到AC，並返回上一函式
         STA R0
         LDA R1
         BUN R0 I
+
+func,   DEC 0        
+        LDA func     
+        BSA SAVE     
+        LDA 1        
+        BSA PUSH     
+        LDA 2        
+        BSA PUSH     
+        BSA POP      
+        STA R1       
+        BSA POP      
+        ADD R1       
+        BSA PUSH     
+        BSA POP      
+        BSA RET      
         END

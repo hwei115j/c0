@@ -37,7 +37,9 @@ void p_ast(Ast *ast)
         printf(")");
     }
     if(ast->type == AST_COMPOUND_STMT) {
+        printf("(AST_COMPOUND_STMT");
         p_list(ast->stmts);
+        printf(")");
     }
     if(ast->type == AST_LITERAL){
         printf("%d ", ast->ival);
