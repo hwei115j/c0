@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "c0.h"
+#define error(STR) pferror(STR, __LINE__)
 
 static Ctype *ctype_int = &(Ctype){CTYPE_INT, 2, NULL};
 static Ctype *ctype_long = &(Ctype){CTYPE_LONG, 4, NULL};
@@ -16,9 +17,9 @@ static Ast *new_ast()
     return r;
 }
 
-static void error(char *s)
+static void pferror(char *s, int line)
 {
-    printf("%s error!\n", s);
+    printf("parser %d:%s error!\n",line, s);
     exit(1);
 }
 
