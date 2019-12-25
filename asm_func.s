@@ -1,4 +1,5 @@
-        BSA func
+        BSA x1
+        BSA CALL
         ADD NUM
         OUT
         HLT
@@ -36,8 +37,8 @@ PUSH,   DEC 0       //將AC PUSH到mem[SP++]
         LDA SP
         ADD N1
         STA SP
-        LDA SP I
         BUN PUSH I
+
 POP,    DEC 0       //將mem[--SP]讀到AC
         LDA SP
         INC
@@ -51,21 +52,17 @@ SAVE,   DEC 0       //呼叫AC儲存的function位址
         BSA PUSH
         LDA SP
         STA BP
-        BSA PUSH
         BUN SAVE I
 //  argc[n]
 //  argc[...]
-//  argc[0]                     -4
-//  ret STA add <- 先不實做     (-4)
-//  return add                  -3
-//  'BP                         -2
-//  'SP                         -1
+//  argc[0]                     -3
+//  ret STA add <- 先不實做     (-3)
+//  return add                  -2
+//  'BP                         -1
 //  new BP,SP ->  //NULL
 RET,    DEC 0       //將return值存到AC，並返回上一函式
         STA R1
         LDA BP
-        STA SP
-        BSA POP
         STA SP
         BSA POP
         STA BP
@@ -74,12 +71,34 @@ RET,    DEC 0       //將return值存到AC，並返回上一函式
         LDA R1
         BUN R0 I
 
+CALL,   DEC 0
+        STA R0
+        LDA CALL
+        BSA PUSH
+        LDA BP
+        BSA PUSH
+        LDA SP
+        STA BP
+        BUN R0 I
+
+GETF,   DEC 0
+        LDA GETF
+        ADD P1
+        BUN GETF I
+
+x1,     DEC 0
+        BSA GETF
+        BUN x1 I
+        LDA P1
+        ADD P2
+        BSA RET
+
 func,   DEC 0        
         LDA func     
         BSA SAVE     
-        LDA 1        
+        LDA P1        
         BSA PUSH     
-        LDA 2        
+        LDA P2        
         BSA PUSH     
         BSA POP      
         STA R1       
