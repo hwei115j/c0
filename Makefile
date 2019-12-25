@@ -1,6 +1,6 @@
 TARGET = c
 
-OBJ = main.c lex.c parser.c
+OBJ = lex.o parser.o
 ASM = asm.c lex.c parser.c
 SEXP = sexp.c lex.c parser.c
 CC = gcc
@@ -9,20 +9,26 @@ CFLAGS =
 OUTDIR = build
 SRCDIR = src
 INCDIR = include 
-INCLUDES = $(addprefix -I,$(INCDIR))
+TESTDIR = test
 
-$(OUTDIR)/$(TARGET): $(OUTDIR)/%.o
-	$(CC) $(CFLAGS) $@ -o $(TARGET)
+INCLUDES = $(addprefix -I ,$(INCDIR))
+OBJ := $(patsubst %.o, $(OUTDIR)/%.o, $(OBJ))
+TARGET := $(TESTDIR)/$(TARGET)
+all: $(OBJ) $(OUTDIR)/main.o
+	@echo "    CC      "$(TARGET)
+	@$(CC) $(CFLAGS) $^ -o $(TARGET)
 
-$(OUTDIR)/%.o: %.c
-	mkdir -p $(dir $@)
-	echo "    CC      "$@
-	$(CC) $(CFLAGS) $@ -o $@ -c $(INCLUDES) $<
-asm:
-	${CC} ${ASM} -o c
-sexp:
-	${CC} ${SEXP} -o c
-debug:
-	${CC} -g ${OBJ} -o c && gdb c
+asm: $(OBJ) $(OUTDIR)/asm.o
+	@echo "    CC      "$(TARGET)
+	@$(CC) $(CFLAGS) $^ -o $(TARGET)
+
+sexp: $(OBJ) $(OUTDIR)/sexp.o
+	@echo "    CC      "$(TARGET)
+	@$(CC) $(CFLAGS) $^ -o $(TARGET)
+	
+$(OUTDIR)/%.o: $(SRCDIR)/%.c
+	@mkdir -p $(dir $@)
+	@echo "    CC      "$@
+	@$(CC) $(CFLAGS) $< -o $@ -c $(INCLUDES)
 clean:
-	rm -f *.exe *.out *.o *.stackdump
+	rm -rf *.exe *.out *.o *.stackdump $(OUTDIR)

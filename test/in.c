@@ -14,7 +14,7 @@ int main()
     int sum = 0;
 
     if(i)
-        int a = 10;
+        i = 100;
     if(sum) 
         func();
     else {

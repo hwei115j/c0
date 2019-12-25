@@ -83,7 +83,7 @@ CALL,   DEC 0
 
 GETF,   DEC 0
         LDA GETF
-        ADD P1
+        INC
         BUN GETF I
 
 x1,     DEC 0
