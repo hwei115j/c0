@@ -26,7 +26,6 @@ static const char *getype(int type)
             return "struct";
     }
 }
-
 void p_ast(Ast *ast)
 {
     if(!ast)

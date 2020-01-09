@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include "c0.h"
-
+#include "asm.h"
 #define CR(STR, NUM) do{int _n = printf("%s", STR); for(int i = _n; i < NUM; i++) printf(" ");}while(0);
 
-struct symbol *global, *local;
+int bp = 0;
+struct sym_obj *sym_global;
+struct sym_obj *sym_local;
 void tab(char *symbol, char *com, char *par, char *i)
 {
     //8 4 8 1
@@ -48,21 +50,23 @@ void p_ast(Ast *ast)
     if(!ast)
         return ;
     if(ast->type == AST_FUNC) {
+        struct symbol r;
+        r.name = ast->fname;
+        r.type = *ast->ctype;
+        sym_global->add(sym_global, r);
         char str[100];
         sprintf(str, "%s", ast->fname);
         tab(str, "DEC", "0", "");
-        tab("", "LDA", str, "");
-        tab("", "BSA", "SAVE", "");
+        tab("", "BSA", "GETF", "");
+        tab("", "BUN", str, "I");
         //printf("(AST_FUNC ((%s %d) %s)",getype(ast->ctype->type), ast->ctype->size, ast->fname);
         p_ast(ast->body);
         //printf(")");
     }
     if(ast->type == AST_COMPOUND_STMT) {
-        struct symbol *reg = local;
-        local = init_symbol();
+        sym_local = sym_init();
         p_list(ast->stmts);
-        free_symbol(&local);
-        local = reg;
+        sym_del(sym_local);
     }
     if(ast->type == AST_LITERAL){
         char str[100];
@@ -72,18 +76,25 @@ void p_ast(Ast *ast)
         //printf("%d ", ast->ival);
     }
     if(ast->type == TTYPE_PUNCT) {
+        p_ast(ast->left);
+        p_ast(ast->right);
         switch(ast->ival) {
+            case '=':
+
+                break;
             case '+':
-                p_ast(ast->left);
-                p_ast(ast->right);
-                tab("", "BSA", "POP", "");
+                if(ast->left->type == TTYPE_PUNCT)
+                    tab("", "BSA", "POP", "");
+//                else
+//                    tab("", "LDA", ***, "");
                 tab("", "STA", "R1", "");
-                tab("", "BSA", "POP", "");
+                if(ast->right->type == TTYPE_PUNCT)
+                    tab("", "BSA", "POP", "");
+                //else
+                  //  tab("", "LDA", ***, "");
                 tab("", "ADD", "R1", "");
                 break;
             case '-':
-                p_ast(ast->left);
-                p_ast(ast->right);
                 tab("", "BSA", "POP", "");
                 tab("", "CMA", "", "");
                 tab("", "INC", "", "");
@@ -91,13 +102,9 @@ void p_ast(Ast *ast)
                 tab("", "BSA", "POP", "");
                 tab("", "ADD", "R1", "");
             case '*':
-                p_ast(ast->left);
-                p_ast(ast->right);
                 tab("", "BSA", "MUL", "");
                 break;
             case '/':
-                p_ast(ast->left);
-                p_ast(ast->right);
                 tab("", "BSA", "DIV", "");
                 break;
         }
@@ -110,12 +117,20 @@ void p_ast(Ast *ast)
         */
     }
     if(ast->type == AST_DECL) {
-        /*
-        printf("(AST_DECL (= ");
-        p_ast(ast->declvar);
+        //printf("(AST_DECL (= ");
+        struct symbol r; 
+        r.name = ast->declvar->varname;
+        r.type = *ast->declvar->ctype;
+        if(ast->declvar->type == AST_LVAR) {
+            r.base = "bp";
+            r.offset = bp++;
+            sym_local->add(sym_local, r);   
+        }
+        if(ast->declvar->type == AST_GVAR) {
+            sym_global->add(sym_global, r);
+        }
         p_ast(ast->declinit);
-        printf("))");
-        */
+        //printf("))");
     }
     if(ast->type == AST_LVAR) {
         printf("(%s %s) ", getype(ast->ctype->type), ast->varname);
@@ -166,6 +181,7 @@ void p_ast(Ast *ast)
 
 void p_list(List *list)
 {
+    sym_global = sym_init();
     for (Iter i = list_iter(list); !iter_end(i);) {
         Ast *v = iter_next(&i);
         p_ast(v);
@@ -173,7 +189,6 @@ void p_list(List *list)
 }
 int main()
 {
-    global = init_symbol();
     p_list(statement());
 }
 

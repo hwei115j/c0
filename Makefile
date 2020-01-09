@@ -5,7 +5,7 @@ ASM = asm.c lex.c parser.c
 SEXP = sexp.c lex.c parser.c
 CC = gcc
 
-CFLAGS =
+CFLAGS = 
 OUTDIR = build
 SRCDIR = src
 INCDIR = include 
@@ -14,6 +14,7 @@ TESTDIR = test
 INCLUDES = $(addprefix -I ,$(INCDIR))
 OBJ := $(patsubst %.o, $(OUTDIR)/%.o, $(OBJ))
 TARGET := $(TESTDIR)/$(TARGET)
+
 all: $(OBJ) $(OUTDIR)/main.o
 	@echo "    CC      "$(TARGET)
 	@$(CC) $(CFLAGS) $^ -o $(TARGET)
@@ -21,6 +22,10 @@ all: $(OBJ) $(OUTDIR)/main.o
 asm: $(OBJ) $(OUTDIR)/asm.o
 	@echo "    CC      "$(TARGET)
 	@$(CC) $(CFLAGS) $^ -o $(TARGET)
+
+nasm: $(OBJ) $(OUTDIR)/nasm.o
+	@echo "    CC      "$(TARGET)
+	@$(CC) -g $(CFLAGS) $^ -o $(TARGET)
 
 sexp: $(OBJ) $(OUTDIR)/sexp.o
 	@echo "    CC      "$(TARGET)
@@ -31,4 +36,4 @@ $(OUTDIR)/%.o: $(SRCDIR)/%.c
 	@echo "    CC      "$@
 	@$(CC) $(CFLAGS) $< -o $@ -c $(INCLUDES)
 clean:
-	rm -rf *.exe *.out *.o *.stackdump $(OUTDIR)
+	rm -rf *.exe *.out *.o *.stackdump $(OUTDIR) $(TARGET)

@@ -32,14 +32,14 @@ J1,     ADD N1
 J2,     BSA RET
 
 
-PUSH,   DEC 0       //將AC PUSH到mem[SP++]
+PUSH,   DEC 0       //將AC PUSH到mem[SP--]
         STA SP I
         LDA SP
         ADD N1
         STA SP
         BUN PUSH I
 
-POP,    DEC 0       //將mem[--SP]讀到AC
+POP,    DEC 0       //將mem[++SP]讀到AC
         LDA SP
         INC
         STA SP
@@ -53,6 +53,7 @@ SAVE,   DEC 0       //呼叫AC儲存的function位址
         LDA SP
         STA BP
         BUN SAVE I
+//  --->H
 //  argc[n]
 //  argc[...]
 //  argc[0]                     -3
@@ -60,6 +61,7 @@ SAVE,   DEC 0       //呼叫AC儲存的function位址
 //  return add                  -2
 //  'BP                         -1
 //  new BP,SP ->  //NULL
+//  --->L
 RET,    DEC 0       //將return值存到AC，並返回上一函式
         STA R1
         LDA BP
@@ -71,7 +73,7 @@ RET,    DEC 0       //將return值存到AC，並返回上一函式
         LDA R1
         BUN R0 I
 
-CALL,   DEC 0
+CALL,   DEC 0       //呼叫AC儲存的函式位置
         STA R0
         LDA CALL
         BSA PUSH
@@ -81,30 +83,14 @@ CALL,   DEC 0
         STA BP
         BUN R0 I
 
-GETF,   DEC 0
+GETF,   DEC 0       //取得函式的記憶體位置
         LDA GETF
         INC
         BUN GETF I
 
-x1,     DEC 0
-        BSA GETF
-        BUN x1 I
+x1,     DEC 0       //DEC 0
+        BSA GETF    //BSA GETF
+        BUN x1 I    //BUN (FUNC_NAME) I
         LDA P1
         ADD P2
         BSA RET
-
-func,   DEC 0        
-        LDA func     
-        BSA SAVE     
-        LDA P1        
-        BSA PUSH     
-        LDA P2        
-        BSA PUSH     
-        BSA POP      
-        STA R1       
-        BSA POP      
-        ADD R1       
-        BSA PUSH     
-        BSA POP      
-        BSA RET      
-        END
