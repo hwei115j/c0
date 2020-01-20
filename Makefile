@@ -23,10 +23,6 @@ asm: $(OBJ) $(OUTDIR)/asm.o
 	@echo "    CC      "$(TARGET)
 	@$(CC) $(CFLAGS) $^ -o $(TARGET)
 
-nasm: $(OBJ) $(OUTDIR)/nasm.o
-	@echo "    CC      "$(TARGET)
-	@$(CC) -g $(CFLAGS) $^ -o $(TARGET)
-
 sexp: $(OBJ) $(OUTDIR)/sexp.o
 	@echo "    CC      "$(TARGET)
 	@$(CC) $(CFLAGS) $^ -o $(TARGET)

@@ -88,6 +88,9 @@ GETF,   DEC 0       //取得函式的記憶體位置
         INC
         BUN GETF I
 
+SBP,    DEC 0
+        ADD BP
+        BUN SBP I
 x1,     DEC 0       //DEC 0
         BSA GETF    //BSA GETF
         BUN x1 I    //BUN (FUNC_NAME) I

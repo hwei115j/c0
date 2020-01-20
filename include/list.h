@@ -120,4 +120,11 @@ static inline void list_free(List *list)
         free(now);
     }
 }
+
+static inline void list_copy(List *out, List *in)
+{
+    for (Iter i = list_iter(in); !iter_end(i);) {
+        list_push(out, iter_next(&i));
+    } 
+}
 #endif /* MAZUCC_LIST_H */

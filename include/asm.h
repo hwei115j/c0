@@ -7,7 +7,10 @@
 
 struct symbol {
     char *name;
-    int offset;
+    union {
+        int data;
+        int offset;
+    };
     Ctype type;                
 };
 
@@ -19,6 +22,8 @@ struct sym_obj {
 
 static struct symbol *sym_read(struct sym_obj *obj, char *str)
 {
+    if(str == NULL)
+        return NULL;
     for (Iter i = list_iter(obj->symbol); !iter_end(i);) {
         struct symbol *r = iter_next(&i);
         if(!strcmp(r->name, str))
@@ -29,6 +34,8 @@ static struct symbol *sym_read(struct sym_obj *obj, char *str)
 
 static void sym_add(struct sym_obj *obj, struct symbol *r)
 {
+    if(r == NULL)
+        return ;
     struct symbol *m = malloc(sizeof(struct symbol));
     memcpy(m, r, sizeof(struct symbol));
     list_push(obj->symbol, m);

@@ -28,8 +28,11 @@ void p_ast(Ast *ast)
         p_ast(ast->declvar);
         p_ast(ast->declinit);
     }
-    if(ast->type == AST_GVAR || ast->type == AST_LVAR) {
+    if(ast->type == AST_LVAR) {
         printf("AST_LVAR node = %x size = %d varname = %s\n", ast, ast->ctype->size, ast->varname); 
+    }
+    if(ast->type == AST_GVAR) {
+        printf("AST_GVAR node = %x size = %d varname = %s\n", ast, ast->ctype->size, ast->varname); 
     }
     if(ast->type == AST_IF) {
         printf("IF node = %x cond = %x then = %x else = %x\n", ast, ast->cond, ast->then, ast->els);
