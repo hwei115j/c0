@@ -234,6 +234,7 @@ static void lda(Ast *ast)
             sp--;
         }
         else {
+            fprintf(stderr, "%d\n", ast->type);
             error("error");
         }
     }
@@ -391,6 +392,7 @@ static void emit_func_body(Ast *ast)
                 sym_local->add(sym_local, r);
             if(ast->declinit == NULL) {
                 emit("  BSA PUSH");
+                sp--;
             }
             else
                 emit_func_body(ast->declinit);

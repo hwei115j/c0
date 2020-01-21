@@ -1,12 +1,14 @@
 int a = 100;
 int main()
 {
-    int n = 10;
-    while(n) {
-        a = 10 - n + 48;
-        out();
+    int i;
+    int j;
+    for(i = 10; i; i = i-1) {
+        for(j = 10-i; j; j = j - 1) {
+            a = 42;
+            out();
+        }
         a = 10;
         out();
-        n = n - 1;
     }
 }

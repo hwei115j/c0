@@ -4,8 +4,15 @@
 main,   DEC     0        
         BSA     GETF     
         BUN     main    I
+        BSA     PUSH     
+        BSA     PUSH     
         LDA     10       
         BSA     PUSH     
+        LDA     BP       
+        ADD     0        
+        STA     R0       
+        BSA     POP      
+        STA     R0      I
         BUN     .R0      
 .R1,    LDA     10       
         BSA     PUSH     
@@ -19,17 +26,41 @@ main,   DEC     0
         BSA     POP      
         ADD     R1       
         BSA     PUSH     
-        LDA     48       
-        BSA     PUSH     
+        LDA     BP       
+        ADD     -1       
+        STA     R0       
         BSA     POP      
-        STA     R1       
-        BSA     POP      
-        ADD     R1       
+        STA     R0      I
+        BUN     .R2      
+.R3,    LDA     42       
         BSA     PUSH     
         BSA     POP      
         STA     a        
         BSA     out      
         BSA     CALL     
+        LDA     -1       
+        BSA     OSET     
+        BSA     PUSH     
+        LDA     1        
+        BSA     PUSH     
+        BSA     POP      
+        CMA              
+        INC              
+        STA     R1       
+        BSA     POP      
+        ADD     R1       
+        BSA     PUSH     
+        LDA     BP       
+        ADD     -1       
+        STA     R0       
+        BSA     POP      
+        STA     R0      I
+.R2,    LDA     -1       
+        BSA     OSET     
+        BSA     PUSH     
+        BSA     POP      
+        SZA              
+        BUN     .R3      
         LDA     10       
         BSA     PUSH     
         BSA     POP      
@@ -116,6 +147,7 @@ N1,     DEC     -1
 a,      DEC     100      
 10,     DEC     10       
 0,      DEC     0        
-48,     DEC     48       
+-1,     DEC     -1       
+42,     DEC     42       
 1,      DEC     1        
         END              

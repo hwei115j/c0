@@ -3,6 +3,7 @@
 #include <string.h>
 #include "c0.h"
 #define error(STR) pferror(STR, __LINE__)
+#define expect(STR) pfexpect(STR, __LINE__)
 
 static Ctype *ctype_int = &(Ctype){CTYPE_INT, 2, NULL};
 static Ctype *ctype_long = &(Ctype){CTYPE_LONG, 4, NULL};
@@ -19,17 +20,17 @@ static Ast *new_ast()
 
 static void pferror(char *s, int line)
 {
-    printf("parser %d:%s error!\n",line, s);
+    fprintf(stderr, "parser %d:%s error!\n",line, s);
     exit(1);
 }
 
-static void expect(char punct)
+static void pfexpect(char punct, int line)
 {
     token *tok = read_token();
     if(!tok || !is_punct(tok, punct)) {
         char str[100];
         sprintf(str, "The next token is '%c' (tok = %c) ", punct, tok->punct);
-        error(str);
+        pferror(str, line);
     }
 }
 static Ctype *get_ctype(token *);
@@ -373,12 +374,17 @@ static Ast *iteration_stmt()
     if(is_punct(tok, ';')) {
         unget_token(tok);
         r->forinit = NULL;
+        expect(';');
+    }
+    else if(get_ctype(tok)) {
+        unget_token(tok);
+        r->forinit = decl();
     }
     else {
         unget_token(tok);
         r->forinit = expr();
+        expect(';');
     }
-    expect(';');
     tok = read_token();
     if(is_punct(tok, ';')) {
         unget_token(tok);
