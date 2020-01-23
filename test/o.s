@@ -1,101 +1,44 @@
         BSA     main     
         BSA     CALL     
         HLT              
+mul,    DEC     0        
+        BSA     GETF     
+        BUN     mul     I
+        CLA              
+        BSA     PUSH     
+        LDA     BP       
+        ADD     0        
+        STA     R1       
+        LDA     3        
+        BSA     OSET     
+        STA     R1      I
+        CLA              
+        BSA     PUSH     
+        LDA     BP       
+        ADD     -1       
+        STA     R1       
+        LDA     4        
+        BSA     OSET     
+        STA     R1      I
+        LDA     3        
+        BSA     PUSH     
+        BSA     RET      
 main,   DEC     0        
         BSA     GETF     
         BUN     main    I
-        BSA     PUSH     
-        BSA     PUSH     
-        LDA     10       
-        BSA     PUSH     
-        LDA     BP       
-        ADD     0        
-        STA     R0       
-        BSA     POP      
-        STA     R0      I
-        BUN     .R0      
-.R1,    LDA     10       
-        BSA     PUSH     
-        LDA     0        
-        BSA     OSET     
-        BSA     PUSH     
-        BSA     POP      
-        CMA              
-        INC              
-        STA     R1       
-        BSA     POP      
-        ADD     R1       
-        BSA     PUSH     
-        LDA     BP       
-        ADD     -1       
-        STA     R0       
-        BSA     POP      
-        STA     R0      I
-        BUN     .R2      
-.R3,    LDA     42       
-        BSA     PUSH     
-        BSA     POP      
-        STA     a        
-        BSA     out      
-        BSA     CALL     
-        LDA     -1       
-        BSA     OSET     
-        BSA     PUSH     
         LDA     1        
         BSA     PUSH     
-        BSA     POP      
-        CMA              
-        INC              
-        STA     R1       
-        BSA     POP      
-        ADD     R1       
+        LDA     2        
         BSA     PUSH     
-        LDA     BP       
-        ADD     -1       
-        STA     R0       
-        BSA     POP      
-        STA     R0      I
-.R2,    LDA     -1       
-        BSA     OSET     
-        BSA     PUSH     
-        BSA     POP      
-        SZA              
-        BUN     .R3      
-        LDA     10       
-        BSA     PUSH     
-        BSA     POP      
-        STA     a        
-        BSA     out      
+        BSA     mul      
         BSA     CALL     
-        LDA     0        
-        BSA     OSET     
-        BSA     PUSH     
-        LDA     1        
-        BSA     PUSH     
-        BSA     POP      
-        CMA              
-        INC              
-        STA     R1       
-        BSA     POP      
-        ADD     R1       
-        BSA     PUSH     
-        LDA     BP       
-        ADD     0        
-        STA     R0       
-        BSA     POP      
-        STA     R0      I
-.R0,    LDA     0        
-        BSA     OSET     
-        BSA     PUSH     
-        BSA     POP      
-        SZA              
-        BUN     .R1      
         BSA     RET      
         ORG     1000     
 out,    DEC     0        
         BSA     GETF     
         BUN     out     I
-        LDA     a        
+        LDA     3        
+        BSA     OSET     
         OUT              
         BSA     RET      
 OSET,   DEC     0        
@@ -144,10 +87,10 @@ BP,     DEC     3999
 R0,     DEC     0        
 R1,     DEC     0        
 N1,     DEC     -1       
-a,      DEC     100      
-10,     DEC     10       
 0,      DEC     0        
+3,      DEC     3        
 -1,     DEC     -1       
-42,     DEC     42       
+4,      DEC     4        
 1,      DEC     1        
+2,      DEC     2        
         END              

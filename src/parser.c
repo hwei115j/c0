@@ -131,9 +131,22 @@ static Ast *ident_or_func(char *id)
 {
     Ast *ast = new_ast();
     token *tok = read_token();
+    List *args = make_list();
+
     if(is_punct(tok, '(')) {
+        while(1) {
+            list_push(args, expr());
+            tok = peek_token();
+            if(is_punct(tok, ','))
+                expect(',');
+            else if(is_punct(tok, ')'))
+                break;
+            else
+                error("next is ',' or ')'!");
+        }
         expect(')');
         ast->type = AST_FUNCALL;
+        ast->args = args;
         ast->fname = id;
         return ast;
     }
@@ -195,13 +208,23 @@ static Ast *decl_or_func()
 
 static Ast *func_def(Ctype *ctype, char *name)
 {
+    List *args = make_list();    
     expect('(');
+    while(1) {
+        token *tok = peek_token();
+        if(is_punct(tok, ','))
+            error("next is not ','!");
+        if(is_punct(tok, ')'))
+            break;
+        list_push(args, decl());
+    }
     expect(')');
     expect('{');
     Ast *func = new_ast();
     func->type = AST_FUNC;
     func->ctype = ctype;
     func->fname = name;
+    func->args = args;
     func->body = compound_stmt();
     return func;
 }
@@ -319,14 +342,19 @@ static Ast *decl_init(Ast *var)
 {
     token *tok = read_token();
 
+    if(is_punct(tok, ',') || is_punct(tok, ';')) {
+        return ast_decl(var, NULL);
+    }
+    if(is_punct(tok, ')')) {
+        unget_token(tok);
+        return ast_decl(var, NULL);
+    }
     if(is_punct(tok, '=')) {
         Ast *init = expr();
         expect(';');
         return ast_decl(var, init);
     }
-    unget_token(tok);
-    expect(';');
-    return ast_decl(var, NULL);
+    error("next is ',' or ';' or '='!");
 }
 
 static Ast *ast_decl(Ast *var, Ast *init)

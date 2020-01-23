@@ -56,10 +56,10 @@ SAVE,   DEC 0       //呼叫AC儲存的function位址
 //  --->H
 //  argc[n]
 //  argc[...]
-//  argc[0]                     -3
-//  ret STA add <- 先不實做     (-3)
-//  return add                  -2
-//  'BP                         -1
+//  argc[0]                     3
+//  ret STA add <- 先不實做     (3)
+//  return add                  2
+//  'BP                         1
 //  new BP,SP ->  //NULL
 //  --->L
 RET,    DEC 0       //將return值存到AC，並返回上一函式

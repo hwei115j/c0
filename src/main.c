@@ -5,11 +5,18 @@ void p_list(List *list);
 
 void p_ast(Ast *ast)
 {
-    printf("ast = %x ", ast);
     if(!ast)
         return ;
+    printf("ast = %x ", ast);
     if(ast->type == AST_FUNC) {
         printf("AST_FUNC name = %s size = %d\n", ast->fname, ast->ctype->size);
+        int count = 0;
+        for (Iter i = list_iter(ast->args); !iter_end(i); count++) {
+            Ast *v = iter_next(&i);
+            if(v != NULL)
+                printf("args%d: ", count);
+            p_ast(v->declvar);
+        }
         p_ast(ast->body);
     }
     if(ast->type == AST_COMPOUND_STMT) {
@@ -46,6 +53,13 @@ void p_ast(Ast *ast)
     }
     if(ast->type == AST_FUNCALL) {
         printf("AST_FUNCALL node = %x fname = %s\n", ast, ast->fname);
+        int count = 0;
+        for (Iter i = list_iter(ast->args); !iter_end(i); count++) {
+            Ast *v = iter_next(&i);
+            if(v != NULL)
+                printf("args%d: ", count);
+            p_ast(v);
+        }
     }
     if(ast->type == AST_FOR) {
         printf("AST_FOR node = %x init = %x cond = %x step = %x body = %x\n",\

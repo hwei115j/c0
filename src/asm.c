@@ -117,7 +117,8 @@ static void print_func()
     emit("out,  DEC 0");
     emit("      BSA GETF");
     emit("      BUN out I");
-    emit("      LDA a");
+    emit("      LDA %s", push_const(3, NULL));
+    emit("      BSA OSET");
     emit("      OUT");
     emit("      BSA RET");
 
@@ -140,15 +141,6 @@ static void print_func()
     emit("        STA SP");
     emit("        LDA SP I");
     emit("        BUN POP I");
-/*
-    emit("SAVE,   DEC 0");
-    emit("        BSA PUSH");
-    emit("        LDA BP");
-    emit("        BSA PUSH");
-    emit("        LDA SP");
-    emit("        STA BP");
-    emit("        BUN SAVE I");
-*/
 
     emit("RET,    DEC 0");       //將return值存到AC，並返回上一函式
     emit("        STA R1");
@@ -195,9 +187,22 @@ static void print_global()
 
 static void emit_func_start(Ast *v)
 {
+    sym_local = sym_init();
     emit("%s, DEC 0 ", v->fname);
     emit("    BSA GETF");
     emit("    BUN %s I", v->fname);
+    int count = 3;
+    int lsp = 0;
+    for (Iter i = list_iter(v->args); !iter_end(i);) {
+        Ast *a = iter_next(&i);
+        emit_func_body(a);
+        emit("  LDA BP");
+        emit("  ADD %s", push_const(lsp--, NULL));
+        emit("  STA R1");
+        emit("  LDA %s", push_const(count++, NULL));
+        emit("  BSA OSET");
+        emit("  STA R1 I");
+    }
     
 }
 static void emit_func_end(void)
@@ -238,6 +243,16 @@ static void lda(Ast *ast)
             error("error");
         }
     }
+    else if(ast->type == AST_FUNCALL) {
+        for (Iter i = list_iter(ast->args); !iter_end(i);) {
+            Ast *v = iter_next(&i);
+            emit_func_body(v);
+        }
+        emit("  BSA %s", ast->fname);
+        emit("  BSA CALL");
+        emit("  BSA PUSH");
+        sp--;
+    }
     else {
         error("error");
     }
@@ -251,7 +266,6 @@ static void emit_func_body(Ast *ast)
         case AST_COMPOUND_STMT: {
             struct sym_obj *reg = sym_local;
             sym_local = sym_init();
-            int rsp;
 
             if(reg != NULL)
                 list_copy(sym_local->symbol, reg->symbol);
@@ -259,14 +273,6 @@ static void emit_func_body(Ast *ast)
                 Ast *reg = iter_next(&i);
                 if(reg->type == TTYPE_PUNCT) {
                     emit_func_body(reg);
-                    /*
-                    if(sp != rsp) {
-                        emit("  LDA SP");
-                        emit("  ADD %s", push_const(rsp-sp, NULL));
-                        emit("  STA SP");
-                    }
-                    sp = rsp;
-                    */
                 }
                 else {
                     emit_func_body(reg);
@@ -371,6 +377,10 @@ static void emit_func_body(Ast *ast)
             break;
         }
         case AST_FUNCALL: {
+            for (Iter i = list_iter(ast->args); !iter_end(i);) {
+                Ast *v = iter_next(&i);
+                emit_func_body(v);
+            }
             emit("  BSA %s", ast->fname);
             emit("  BSA CALL");
             break;
@@ -391,6 +401,7 @@ static void emit_func_body(Ast *ast)
             if(r == &o)
                 sym_local->add(sym_local, r);
             if(ast->declinit == NULL) {
+                emit("  CLA");
                 emit("  BSA PUSH");
                 sp--;
             }

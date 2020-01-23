@@ -31,7 +31,12 @@ void p_ast(Ast *ast)
     if(!ast)
         return ;
     if(ast->type == AST_FUNC) {
-        printf("(AST_FUNC ((%s %d) %s)",getype(ast->ctype->type), ast->ctype->size, ast->fname);
+        printf("(AST_FUNC (%s (%s)",ast->fname, getype(ast->ctype->type), ast->ctype->size);
+        for (Iter i = list_iter(ast->args); !iter_end(i);) {
+            Ast *v = iter_next(&i);
+            p_ast(v->declvar);
+        }
+        printf(")");
         p_ast(ast->body);
         printf(")");
     }
@@ -74,7 +79,12 @@ void p_ast(Ast *ast)
         printf(")");
     }
     if(ast->type == AST_FUNCALL) {
-        printf("(AST_FUNCALL %s)", ast->fname);
+        printf("(AST_FUNCALL (%s ", ast->fname);
+        for (Iter i = list_iter(ast->args); !iter_end(i);) {
+            Ast *v = iter_next(&i);
+            p_ast(v);
+        }
+        printf("))");
     }
     if(ast->type == AST_FOR) {
         printf("(AST_FOR ");
