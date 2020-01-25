@@ -1,37 +1,31 @@
         BSA     main     
         BSA     CALL     
         HLT              
-mul,    DEC     0        
-        BSA     GETF     
-        BUN     mul     I
-        CLA              
-        BSA     PUSH     
-        LDA     BP       
-        ADD     0        
-        STA     R1       
-        LDA     3        
-        BSA     OSET     
-        STA     R1      I
-        CLA              
-        BSA     PUSH     
-        LDA     BP       
-        ADD     -1       
-        STA     R1       
-        LDA     4        
-        BSA     OSET     
-        STA     R1      I
-        LDA     3        
-        BSA     PUSH     
-        BSA     RET      
 main,   DEC     0        
         BSA     GETF     
         BUN     main    I
+        LDA     4        
+        BSA     PUSH     
         LDA     1        
         BSA     PUSH     
         LDA     2        
         BSA     PUSH     
-        BSA     mul      
-        BSA     CALL     
+        BSA     POP      
+        STA     R1       
+        BSA     POP      
+        ADD     R1       
+        BSA     PUSH     
+        BSA     POP      
+        STA     .R2      
+        BSA     POP      
+        STA     .R3      
+        CLA              
+        STA     R1       
+        LDA     -8       
+        STA     .R4      
+        BSA     .MUL     
+        LDA     R1       
+        BSA     PUSH     
         BSA     RET      
         ORG     1000     
 out,    DEC     0        
@@ -40,6 +34,11 @@ out,    DEC     0
         LDA     3        
         BSA     OSET     
         OUT              
+        BSA     RET      
+in,     DEC     0        
+        BSA     GETF     
+        BUN     in      I
+        INP              
         BSA     RET      
 OSET,   DEC     0        
         ADD     BP       
@@ -81,16 +80,35 @@ GETF,   DEC     0
         LDA     GETF     
         INC              
         BUN     GETF    I
+.MUL,   DEC     0        
+.LOP,   LDA     .R3      
+        CIR              
+        STA     .R3      
+        SZE              
+        BUN     .ONE     
+        BUN     .ZRO     
+.ONE,   LDA     .R2      
+        ADD     R1       
+        STA     R1       
+        CLE              
+.ZRO,   LDA     .R2      
+        CIL              
+        STA     .R2      
+        ISZ     .R4      
+        BUN     .LOP     
+        BUN     .MUL    I
 NUM,    DEC     48       
 SP,     DEC     3999     
 BP,     DEC     3999     
 R0,     DEC     0        
 R1,     DEC     0        
+.R2,    DEC     0        
+.R3,    DEC     0        
+.R4,    DEC     0        
 N1,     DEC     -1       
-0,      DEC     0        
-3,      DEC     3        
--1,     DEC     -1       
 4,      DEC     4        
 1,      DEC     1        
 2,      DEC     2        
+-8,     DEC     -8       
+3,      DEC     3        
         END              

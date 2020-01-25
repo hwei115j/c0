@@ -78,7 +78,7 @@ static void emit(char *fmt, ...)
     for(i = 0; *str && !isspace(*str) && (si[i] = *str++); i++);
     for(i = 0; sym[i]; i++);
 
-    if(sym[0] == '.' && sym[1] == 'R') {
+    if(sym[0] == '.' && sym[1] == 'L' && sym[2] > 57) {
         SCR(sym, 0);
         return ;
     }
@@ -114,12 +114,20 @@ static const char *getype(int type)
 }
 static void print_func()
 {
-    emit("out,  DEC 0");
+    
+
+    emit("out,  DEC 0");        //func out()
     emit("      BSA GETF");
     emit("      BUN out I");
     emit("      LDA %s", push_const(3, NULL));
     emit("      BSA OSET");
     emit("      OUT");
+    emit("      BSA RET");
+
+    emit("in,   DEC 0");        //func in()
+    emit("      BSA GETF");
+    emit("      BUN in I");
+    emit("      INP");
     emit("      BSA RET");
 
     emit("OSET,   DEC 0");      //AC <- mem[BP+AC]
@@ -168,6 +176,25 @@ static void print_func()
     emit("        INC");
     emit("        BUN GETF I");
 
+    emit(".MUL,   DEC 0");
+    emit(".LOP,   CLE");
+    emit("        LDA .R3");
+    emit("        CIR");
+    emit("        STA .R3");
+    emit("        SZE");
+    emit("        BUN .ONE");
+    emit("        BUN .ZRO");
+    emit(".ONE,   LDA .R2");
+    emit("        ADD R1");
+    emit("        STA R1");
+    emit("        CLE");
+    emit(".ZRO,   LDA .R2");
+    emit("        CIL");
+    emit("        STA .R2");
+    emit("        ISZ .R4");
+    emit("        BUN .LOP");
+    emit("        BUN .MUL I");
+
     emit("NUM,   DEC 48");
 }
 
@@ -177,6 +204,9 @@ static void print_global()
     emit("BP,   DEC 3999");   
     emit("R0,   DEC 0");
     emit("R1,   DEC 0");
+    emit(".R2,  DEC 0");
+    emit(".R3,  DEC 0");
+    emit(".R4,  DEC 0");
     emit("N1,   DEC -1");
 
     for (Iter i = list_iter(sym_global->symbol); !iter_end(i);) {
@@ -203,11 +233,13 @@ static void emit_func_start(Ast *v)
         emit("  BSA OSET");
         emit("  STA R1 I");
     }
-    
 }
 static void emit_func_end(void)
 {
+    sym_del(sym_local);
+    sym_local = NULL;
     emit("   BSA RET");
+    sp = 0;
 }
 static void lda(Ast *ast)
 {
@@ -224,12 +256,6 @@ static void lda(Ast *ast)
         if((r = sym_local->read(sym_local, ast->varname)) != NULL) {
             emit("  LDA %s", push_const(r->offset, NULL));
             emit("  BSA OSET");
-            /*
-            emit("  LDA BP");
-            emit("  ADD %s", push_const(r->offset, NULL));
-            emit("  STA R0");
-            emit("  LDA R0 I");
-            */
             emit("  BSA PUSH");
             sp--;
         }
@@ -345,6 +371,26 @@ static void emit_func_body(Ast *ast)
                     }
                     break;
                 case '*':
+                    if(ast->left != NULL) {
+                        lda(ast->left);
+                        lda(ast->right);
+                        emit("        BSA POP");
+                        emit("        STA .R2");
+                        emit("        BSA POP");
+                        emit("        STA .R3");
+                        emit("        CLA");
+                        emit("        STA R1");
+                        emit("        LDA %s", push_const(-8, NULL));
+                        emit("        STA .R4");
+
+                        emit("        BSA .MUL");
+
+                        emit("        LDA R1");
+                        emit("        BSA PUSH");
+                    }
+                    else {
+                        lda(ast->right);
+                    }
                     break;
                 case '/':
                     break;
@@ -380,6 +426,8 @@ static void emit_func_body(Ast *ast)
             for (Iter i = list_iter(ast->args); !iter_end(i);) {
                 Ast *v = iter_next(&i);
                 emit_func_body(v);
+                if(v != NULL && v->type == AST_FUNCALL)
+                    emit("  BSA PUSH");
             }
             emit("  BSA %s", ast->fname);
             emit("  BSA CALL");
@@ -421,13 +469,13 @@ static void emit_func_body(Ast *ast)
             emit_func_body(ast->cond);
             emit("  BSA POP");
             emit("  SZA");  
-            emit("  BUN .R%d", r);
+            emit("  BUN .L%d", r);
             sp++;
             emit_func_body(ast->els);
-            emit("  BUN .R%d", r+1);
-            emit(".R%d, NOP", r);
+            emit("  BUN .L%d", r+1);
+            emit(".L%d, NOP", r);
             emit_func_body(ast->then);
-            emit(".R%d, NOP", r+1);
+            emit(".L%d, NOP", r+1);
             break;
         }
         case AST_TERNARY:
@@ -436,28 +484,28 @@ static void emit_func_body(Ast *ast)
             int r = rc;
             rc+=2;
             emit_func_body(ast->forinit);
-            emit("  BUN .R%d", r);
-            emit(".R%d, NOP", r+1);
+            emit("  BUN .L%d", r);
+            emit(".L%d, NOP", r+1);
             emit_func_body(ast->forbody);
             emit_func_body(ast->forstep);
-            emit(".R%d, NOP", r);
+            emit(".L%d, NOP", r);
             emit_func_body(ast->forcond);
             emit("  BSA POP");
             emit("  SZA");
-            emit("  BUN .R%d", r+1);
+            emit("  BUN .L%d", r+1);
             break;
         }
         case AST_WHILE: {
             int r = rc;
             rc+=2;
-            emit("  BUN .R%d", r);
-            emit(".R%d, NOP", r+1);
+            emit("  BUN .L%d", r);
+            emit(".L%d, NOP", r+1);
             emit_func_body(ast->whilebody);
-            emit(".R%d, NOP", r);
+            emit(".L%d, NOP", r);
             emit_func_body(ast->whilecond);
             emit("  BSA POP");
             emit("  SZA");
-            emit("  BUN .R%d", r+1);
+            emit("  BUN .L%d", r+1);
             break;
         }
         case AST_RETURN: {
@@ -520,8 +568,6 @@ static void p_list(List *list)
 
     emit("  BSA main");
     emit("  BSA CALL");
-//    emit("  ADD NUM");
-//    emit("  OUT");
     emit("  HLT");
 
     for (Iter i = list_iter(list); !iter_end(i);) {
