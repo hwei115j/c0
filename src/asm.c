@@ -382,11 +382,11 @@ static void emit_func_body(Ast *ast)
                         emit("        STA R1");
                         emit("        LDA %s", push_const(-8, NULL));
                         emit("        STA .R4");
-
                         emit("        BSA .MUL");
-
                         emit("        LDA R1");
                         emit("        BSA PUSH");
+                        sp++;
+
                     }
                     else {
                         lda(ast->right);
@@ -394,6 +394,12 @@ static void emit_func_body(Ast *ast)
                     break;
                 case '/':
                     break;
+                case PUNCT_CIR:
+                    break
+                case PUNCT_CIL:
+                        lda(ast->left);
+                        lda(ast->right);
+                    break
             }
             break;
         case AST_LITERAL: {

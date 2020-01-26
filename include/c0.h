@@ -33,6 +33,8 @@ enum {
     PUNCT_LOGAND,
     PUNCT_LOGOR,
     PUNCT_ARROW,
+    PUNCT_CIR,
+    PUNCT_CIL
 };
 
 enum {

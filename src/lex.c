@@ -10,6 +10,24 @@ static token *ungotten = NULL;
 
 static token *read_punct(int punct)
 {
+    int ch;
+
+    switch(punct) {
+        case '>': {
+            if((ch = getchar()) == '>')
+                punct = PUNCT_CIR;
+            else
+                ungetc(ch, stdin);
+            break;
+        }
+        case '<': {
+            if((ch = getchar()) == '<')
+                punct = PUNCT_CIL;
+            else
+                ungetc(ch, stdin);
+            break;
+        }
+    }
     token *r = malloc(sizeof(token));
     r->type = TTYPE_PUNCT;
     r->punct = punct;

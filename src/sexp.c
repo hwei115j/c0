@@ -49,7 +49,12 @@ void p_ast(Ast *ast)
         printf("%d ", ast->ival);
     }
     if(ast->type == TTYPE_PUNCT) {
-        printf("(%c ", ast->ival);
+        if(ast->ival == PUNCT_CIR)
+            printf("(>> ");
+        else if(ast->ival == PUNCT_CIL)
+            printf("(<< ");
+        else
+            printf("(%c ", ast->ival);
         p_ast(ast->left);
         p_ast(ast->right);
         printf(")");

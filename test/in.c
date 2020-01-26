@@ -7,10 +7,6 @@ int func()
 int main()
 {
     int i = 0;
-    char i1 = 0;
-    long i2 = 0;
-    float i3 = 0;
-    double i4 = 0;
     int sum = 0;
 
     if(i)
