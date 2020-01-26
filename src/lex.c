@@ -11,23 +11,26 @@ static token *ungotten = NULL;
 static token *read_punct(int punct)
 {
     int ch;
+    int reg;
 
     switch(punct) {
-        case '>': {
-            if((ch = getchar()) == '>')
-                punct = PUNCT_CIR;
-            else
-                ungetc(ch, stdin);
+        case '>':
+            reg = PUNCT_CIR;
             break;
-        }
-        case '<': {
-            if((ch = getchar()) == '<')
-                punct = PUNCT_CIL;
-            else
-                ungetc(ch, stdin);
+        case '<':
+            reg = PUNCT_CIL;
             break;
-        }
+        case '+':
+            reg = PUNCT_INC;
+            break;
+        case '-':
+            reg = PUNCT_DEC;
+            break;
     }
+    if((ch = getchar()) == punct)
+        punct = reg;
+    else
+        ungetc(ch, stdin);
     token *r = malloc(sizeof(token));
     r->type = TTYPE_PUNCT;
     r->punct = punct;

@@ -395,11 +395,55 @@ static void emit_func_body(Ast *ast)
                 case '/':
                     break;
                 case PUNCT_CIR:
-                    break
+                    break;
                 case PUNCT_CIL:
-                        lda(ast->left);
-                        lda(ast->right);
-                    break
+                    break;
+                case PUNCT_INC: {
+                    if(ast->right != NULL)
+                        error("err");
+                    if(ast->left->type != AST_LVAR && ast->left->type != AST_GVAR)
+                        error("lvar");
+                    struct symbol *r;
+                    if((r = sym_local->read(sym_local, ast->left->varname)) != NULL) {
+                        emit("  LDA BP");
+                        emit("  ADD %s", push_const(r->offset, NULL));
+                        emit("  STA R0");
+                        emit("  LDA R0 I");
+                        emit("  INC");
+                        emit("  STA R0 I");
+
+                    }
+                    else if((r = sym_global->read(sym_global, ast->left->varname)) != NULL) {
+                        emit("  LDA %s", r->name);
+                        emit("  INC");
+                        emit("  STA %s", r->name);
+                    }
+                    else
+                        error("error");
+                    break;
+                }
+                case PUNCT_DEC:
+                    if(ast->right != NULL)
+                        error("err");
+                    if(ast->left->type != AST_LVAR && ast->left->type != AST_GVAR)
+                        error("lvar");
+                    struct symbol *r;
+                    if((r = sym_local->read(sym_local, ast->left->varname)) != NULL) {
+                        emit("  LDA BP");
+                        emit("  ADD %s", push_const(r->offset, NULL));
+                        emit("  STA R0");
+                        emit("  LDA R0 I");
+                        emit("  ADD N1");
+                        emit("  STA R0 I");
+                    }
+                    else if((r = sym_global->read(sym_global, ast->left->varname)) != NULL) {
+                        emit("  LDA %s", r->name);
+                        emit("  ADD N1");
+                        emit("  STA %s", r->name);
+                    }
+                    else
+                        error("error");
+                    break;
             }
             break;
         case AST_LITERAL: {

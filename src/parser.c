@@ -159,6 +159,9 @@ static Ast *ident_or_func(char *id)
 static int priority(token *tok)
 {
     switch(tok->punct) {
+        case PUNCT_INC:
+        case PUNCT_DEC:
+            return 2;
         case '*':
         case '/':
         case '%':

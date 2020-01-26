@@ -1,5 +1,9 @@
 int main()
 {
-    int x = (3+2) << 2;
-    int y = (4+2) >> 4;
+    int i = 47;
+    out(i++);
+    out(i++);
+    out(i++);
+    out(i++);
+    out(i++);
 }
