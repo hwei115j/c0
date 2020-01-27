@@ -1,53 +1,54 @@
         BSA     main     
         BSA     CALL     
         HLT              
-main,   DEC     0        
+func,   DEC     0        
         BSA     GETF     
-        BUN     main    I
-        LDA     47       
+        BUN     func    I
+        CLA              
         BSA     PUSH     
         LDA     BP       
         ADD     0        
-        STA     R0       
-        LDA     R0      I
-        INC              
-        STA     R0      I
-        BSA     out      
+        STA     R1       
+        LDA     3        
+        BSA     OSET     
+        STA     R1      I
+        LDA     0        
+        BSA     OSET     
+        BSA     PUSH     
+        BSA     POP      
+        SZA              
+        BUN     .L0      
+        BUN     .L1      
+.L0,    LDA     1        
+        BSA     PUSH     
+        BSA     POP      
+.L1,    BSA     RET      
+main,   DEC     0        
+        BSA     GETF     
+        BUN     main    I
+        LDA     3        
+        BSA     PUSH     
+        BSA     func     
         BSA     CALL     
-        LDA     BP       
-        ADD     0        
-        STA     R0       
-        LDA     R0      I
-        INC              
-        STA     R0      I
-        BSA     out      
-        BSA     CALL     
-        LDA     BP       
-        ADD     0        
-        STA     R0       
-        LDA     R0      I
-        INC              
-        STA     R0      I
-        BSA     out      
-        BSA     CALL     
-        LDA     BP       
-        ADD     0        
-        STA     R0       
-        LDA     R0      I
-        INC              
-        STA     R0      I
-        BSA     out      
-        BSA     CALL     
-        LDA     BP       
-        ADD     0        
-        STA     R0       
-        LDA     R0      I
-        INC              
-        STA     R0      I
-        BSA     out      
-        BSA     CALL     
+        BSA     PUSH     
         BSA     RET      
         ORG     1000     
+MCIR,   DEC     0        
+        BUN     ._L0     
+._L1,   LDA     .R2      
+        CIR              
+        STA     .R2      
+._L0,   ISZ     .R3      
+        BUN     ._L1     
+        BUN     MCIR    I
+MCIL,   DEC     0        
+        BUN     ._L2     
+._L3,   LDA     .R2      
+        CIL              
+        STA     .R2      
+._L2,   ISZ     .R3      
+        BUN     ._L3     
+        BUN     MCIL    I
 out,    DEC     0        
         BSA     GETF     
         BUN     out     I
@@ -101,7 +102,8 @@ GETF,   DEC     0
         INC              
         BUN     GETF    I
 .MUL,   DEC     0        
-.LOP,   LDA     .R3      
+.LOP,   CLE              
+        LDA     .R3      
         CIR              
         STA     .R3      
         SZE              
@@ -126,7 +128,7 @@ R1,     DEC     0
 .R3,    DEC     0        
 .R4,    DEC     0        
 N1,     DEC     -1       
-47,     DEC     47       
 0,      DEC     0        
 3,      DEC     3        
+1,      DEC     1        
         END              

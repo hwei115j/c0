@@ -1,9 +1,9 @@
+int func(int x)
+{
+    if(x)
+        return 1;
+}
 int main()
 {
-    int i = 47;
-    out(i++);
-    out(i++);
-    out(i++);
-    out(i++);
-    out(i++);
+    int x = func(3);
 }
