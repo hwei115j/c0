@@ -62,6 +62,9 @@ void p_ast(Ast *ast)
             case PUNCT_DEC:
                 printf("(-- ");
                 break;
+            case PUNCT_EQ:
+                printf("(== ");
+                break;
             default:
                 printf("(%c ", ast->ival);
                 break;

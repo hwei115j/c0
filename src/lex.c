@@ -14,6 +14,9 @@ static token *read_punct(int punct)
     int reg;
 
     switch(punct) {
+        case '=':
+            reg = PUNCT_EQ;
+            break;
         case '>':
             reg = PUNCT_CIR;
             break;
@@ -94,17 +97,46 @@ static token *read_char()
 
     return r;
 }
+/*
+static int getnext()
+{
+    int ch = getchar();
+
+    while(ch != '\n' && isspace(ch) && ch != ' ') {
+
+        //while((ch = getchar()) == '\n' && isspace(ch));
+        while(ch == '\n' || ch == ' ' && isspace(ch))
+            ch = getchar();
+
+        if(ch == '/') {
+            ch = getchar();
+
+            if(ch == '/') {
+                while((ch = getchar()) != '\n' && ch != EOF);
+            } else if(ch == '*') {
+                while(ch != EOF && (ch = getchar()) != EOF) {
+                    if(ch == '*' && (ch = getchar()) == '/') {
+                        break;
+                    }
+                }
+            } else {
+                ungetc(ch, stdin);
+            }
+        }
+    }
+    return ch;
+}
+*/
 static token *gettoken()
 {
     int ch;
 
-    while((ch = getchar()) != '\n' && isspace(ch));
+    while(((ch = getchar()) == '\n' ||  isspace(ch)) && ch != EOF);
+
     /*
      * case Low ... high: 的語法是GCC的擴展語法，並非標準C，使用時請多加注意
      * https://gcc.gnu.org/onlinedocs/gcc-7.4.0/gcc/Case-Ranges.html
      */
-    while(ch == '\n' || ch == ' ')
-        ch = getchar();
     switch(ch) {
         case '0' ... '9':
             ungetc(ch, stdin);
@@ -118,6 +150,30 @@ static token *gettoken()
             return read_str();
         case '\'':
             return read_char();
+        case '/': {
+            ch = getchar();
+            if(ch == '/') {
+                while((ch = getchar()) != '\n' && ch != EOF);
+                return gettoken();
+            }
+            else if(ch == '*') {
+                while(1) {
+                    if((ch = getchar()) == '*') {
+                        if((ch = getchar()) == '/')
+                            break;
+                        else 
+                            ungetc(ch, stdin);
+                    }
+                }
+                return gettoken();
+            }
+            else {
+                ungetc(ch, stdin);
+                ch = '/';
+            }
+        }
+        case '\\':
+        case '!':
         case '&':
         case '|':
         case '>':
@@ -125,12 +181,10 @@ static token *gettoken()
         case '+':
         case '-':
         case '*':
-        case '/':
         case '(':
         case ')':
         case '=':
         case ',':
-        case '\\':
         case ';':
         case '{':
         case '}':

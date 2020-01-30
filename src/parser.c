@@ -165,6 +165,7 @@ static int priority(token *tok)
         case '*':
         case '/':
         case '%':
+        case '!':
             return 3;
         case '+':
         case '-':
@@ -172,6 +173,8 @@ static int priority(token *tok)
         case PUNCT_CIR:
         case PUNCT_CIL:
             return 5;
+        case PUNCT_EQ:
+            return 9;
         case '=':
             return 16;
         defaule:

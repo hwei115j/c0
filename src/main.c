@@ -38,6 +38,9 @@ void p_ast(Ast *ast)
             case PUNCT_DEC:
                 printf("AST_PUNCT node = %x punct = -- left = %x right = %x\n", ast, ast->left,ast->right);
                 break;
+            case PUNCT_EQ:
+                printf("AST_PUNCT node = %x punct = == left = %x right = %x\n", ast, ast->left,ast->right);
+                break;
             default:
                 printf("AST_PUNCT node = %x punct = %c left = %x right = %x\n", ast, ast->ival, ast->left,ast->right);
                 break;
