@@ -72,12 +72,15 @@ void p_ast(Ast *ast)
     if(ast->type == AST_FUNCALL) {
         printf("AST_FUNCALL node = %x fname = %s\n", ast, ast->fname);
         int count = 0;
-        for (Iter i = list_iter(ast->args); !iter_end(i); count++) {
+        List *r = list_reverse(ast->args);
+
+        for (Iter i = list_iter(r); !iter_end(i); count++) {
             Ast *v = iter_next(&i);
             if(v != NULL)
                 printf("args%d: ", count);
             p_ast(v);
         }
+        list_free(r);
     }
     if(ast->type == AST_FOR) {
         printf("AST_FOR node = %x init = %x cond = %x step = %x body = %x\n",\

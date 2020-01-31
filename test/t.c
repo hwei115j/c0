@@ -1,8 +1,7 @@
+int func(int a, int b, int c)
+{
+    return c;
+}
 int main()
 {
-/*    int x;
- *
- *
- *   int y;*/
-    int z;
 }

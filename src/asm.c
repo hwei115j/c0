@@ -281,12 +281,21 @@ static void lda(Ast *ast)
             error("error");
         }
     } else if(ast->type == AST_FUNCALL) {
-        for (Iter i = list_iter(ast->args); !iter_end(i);) {
+        /*
+        List *r = list_reverse(ast->args);
+
+        for (Iter i = list_iter(r); !iter_end(i);) {
             Ast *v = iter_next(&i);
             emit_func_body(v);
         }
+
+        list_free(r);
+        */
+        emit_func_body(ast);
+        /*
         emit("  BSA %s", ast->fname);
         emit("  BSA CALL");
+        */
         emit("  BSA PUSH");
         sp--;
     } else {
@@ -568,7 +577,9 @@ static void emit_func_body(Ast *ast)
         break;
     }
     case AST_FUNCALL: {
-        for (Iter i = list_iter(ast->args); !iter_end(i);) {
+        List *r = list_reverse(ast->args);
+
+        for (Iter i = list_iter(r); !iter_end(i);) {
             Ast *v = iter_next(&i);
             emit_func_body(v);
             if(v != NULL && v->type == AST_FUNCALL)
@@ -576,6 +587,7 @@ static void emit_func_body(Ast *ast)
         }
         emit("  BSA %s", ast->fname);
         emit("  BSA CALL");
+        list_free(r);
         break;
     }
     case AST_FUNC:
