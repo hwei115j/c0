@@ -1,9 +1,9 @@
         BSA     main     
         BSA     CALL     
         HLT              
-func,   DEC     0        
+div,    DEC     0        
         BSA     GETF     
-        BUN     func    I
+        BUN     div     I
         CLA              
         BSA     PUSH     
         LDA     BP       
@@ -20,32 +20,209 @@ func,   DEC     0
         LDA     4        
         BSA     OSET     
         STA     R1      I
-        CLA              
+        LDA     0        
+        BSA     PUSH     
+        BUN     .L0      
+.L1,    LDA     BP       
+        ADD     -2       
+        STA     R0       
+        LDA     R0      I
+        BSA     PUSH     
+        LDA     R0      I
+        INC              
+        STA     R0      I
+        LDA     0        
+        BSA     OSET     
+        BSA     PUSH     
+        LDA     -1       
+        BSA     OSET     
+        BSA     PUSH     
+        BSA     POP      
+        CMA              
+        INC              
+        STA     R1       
+        BSA     POP      
+        ADD     R1       
         BSA     PUSH     
         LDA     BP       
-        ADD     -2       
-        STA     R1       
-        LDA     5        
+        ADD     0        
+        STA     R0       
+        BSA     POP      
+        STA     R0      I
+.L0,    LDA     0        
         BSA     OSET     
-        STA     R1      I
-        LDA     -2       
+        BSA     PUSH     
+        LDA     -1       
+        BSA     OSET     
+        BSA     PUSH     
+        BSA     POP      
+        CMA              
+        INC              
+        STA     R1       
+        BSA     POP      
+        ADD     R1       
+        CLE              
+        SPA              
+        CME              
+        CME              
+        CLA              
+        CIL              
+        BSA     PUSH     
+        BSA     POP      
+        SZA              
+        BUN     .L1      
+        LDA     0        
+        BSA     OSET     
+        BSA     PUSH     
+        LDA     -1       
+        BSA     OSET     
+        BSA     PUSH     
+        BSA     POP      
+        STA     R1       
+        BSA     POP      
+        CMA              
+        INC              
+        ADD     R1       
+        CLE              
+        SZA              
+        CME              
+        CME              
+        CLA              
+        CIL              
+        BSA     PUSH     
+        BSA     POP      
+        SZA              
+        BUN     .L2      
+        BUN     .L3      
+.L2,    LDA     BP       
+        ADD     -2       
+        STA     R0       
+        LDA     R0      I
+        BSA     PUSH     
+        LDA     R0      I
+        INC              
+        STA     R0      I
+.L3,    LDA     -2       
         BSA     OSET     
         BSA     PUSH     
         BSA     POP      
         BSA     RET      
         CMA              
         BSA     RET      
-main,   DEC     0        
+out_num,DEC     0        
         BSA     GETF     
-        BUN     main    I
+        BUN     out_num I
+        CLA              
+        BSA     PUSH     
+        LDA     BP       
+        ADD     0        
+        STA     R1       
         LDA     3        
+        BSA     OSET     
+        STA     R1      I
+        CLA              
         BSA     PUSH     
-        LDA     2        
+        CLA              
         BSA     PUSH     
-        LDA     1        
+        LDA     0        
         BSA     PUSH     
-        BSA     func     
+        LDA     10       
+        BSA     PUSH     
+        LDA     BP       
+        ADD     -1       
+        STA     R0       
+        BSA     POP      
+        STA     R0      I
+        BUN     .L4      
+.L5,    LDA     -1       
+        BSA     OSET     
+        BSA     PUSH     
+        LDA     0        
+        BSA     OSET     
+        BSA     PUSH     
+        BSA     div      
         BSA     CALL     
+        STA     R1       
+        LDA     SP       
+        ADD     2        
+        STA     SP       
+        LDA     R1       
+        BSA     PUSH     
+        LDA     BP       
+        ADD     -2       
+        STA     R0       
+        BSA     POP      
+        STA     R0      I
+        LDA     0        
+        BSA     OSET     
+        BSA     PUSH     
+        LDA     -2       
+        BSA     OSET     
+        BSA     PUSH     
+        LDA     -1       
+        BSA     OSET     
+        BSA     PUSH     
+        BSA     POP      
+        STA     .R2      
+        BSA     POP      
+        STA     .R3      
+        CLA              
+        STA     R1       
+        LDA     -8       
+        STA     .R4      
+        BSA     .MUL     
+        LDA     R1       
+        BSA     PUSH     
+        BSA     POP      
+        CMA              
+        INC              
+        STA     R1       
+        BSA     POP      
+        ADD     R1       
+        BSA     PUSH     
+        LDA     BP       
+        ADD     0        
+        STA     R0       
+        BSA     POP      
+        STA     R0      I
+        LDA     -2       
+        BSA     OSET     
+        BSA     PUSH     
+        LDA     0        
+        BSA     PUSH     
+        BSA     POP      
+        CMA              
+        INC              
+        STA     R1       
+        BSA     POP      
+        ADD     R1       
+        CLE              
+        SPA              
+        CME              
+        CME              
+        CLA              
+        CIL              
+        BSA     PUSH     
+        BSA     POP      
+        SZA              
+        BUN     .L6      
+        BUN     .L7      
+.L6,    LDA     1        
+        BSA     PUSH     
+        LDA     BP       
+        ADD     -3       
+        STA     R0       
+        BSA     POP      
+        STA     R0      I
+.L7,    LDA     -3       
+        BSA     OSET     
+        BSA     PUSH     
+        BSA     POP      
+        SZA              
+        BUN     .L8      
+        BUN     .L9      
+.L8,    LDA     -2       
+        BSA     OSET     
         BSA     PUSH     
         LDA     48       
         BSA     PUSH     
@@ -56,21 +233,54 @@ main,   DEC     0
         BSA     PUSH     
         BSA     out      
         BSA     CALL     
-        LDA     3        
-        BSA     PUSH     
-        LDA     2        
-        BSA     PUSH     
-        LDA     1        
-        BSA     PUSH     
-        BSA     func     
-        BSA     CALL     
-        BSA     PUSH     
-        LDA     48       
-        BSA     PUSH     
-        BSA     POP      
         STA     R1       
+        LDA     SP       
+        ADD     1        
+        STA     SP       
+        LDA     R1       
+        BSA     PUSH     
+.L9,    LDA     10       
+        BSA     PUSH     
+        LDA     -1       
+        BSA     OSET     
+        BSA     PUSH     
+        BSA     div      
+        BSA     CALL     
+        STA     R1       
+        LDA     SP       
+        ADD     2        
+        STA     SP       
+        LDA     R1       
+        BSA     PUSH     
+        LDA     BP       
+        ADD     -1       
+        STA     R0       
         BSA     POP      
-        ADD     R1       
+        STA     R0      I
+.L4,    LDA     -1       
+        BSA     OSET     
+        BSA     PUSH     
+        BSA     POP      
+        SZA              
+        BUN     .L5      
+        LDA     0        
+        BSA     PUSH     
+        BSA     POP      
+        BSA     RET      
+        CMA              
+        BSA     RET      
+main,   DEC     0        
+        BSA     GETF     
+        BUN     main    I
+        LDA     13       
+        BSA     PUSH     
+        BSA     out_num  
+        BSA     CALL     
+        STA     R1       
+        LDA     SP       
+        ADD     1        
+        STA     SP       
+        LDA     R1       
         BSA     PUSH     
         CMA              
         BSA     RET      
@@ -175,8 +385,11 @@ N1,     DEC     -1
 -1,     DEC     -1       
 4,      DEC     4        
 -2,     DEC     -2       
-5,      DEC     5        
+10,     DEC     10       
 2,      DEC     2        
+-8,     DEC     -8       
 1,      DEC     1        
+-3,     DEC     -3       
 48,     DEC     48       
+13,     DEC     13       
         END              

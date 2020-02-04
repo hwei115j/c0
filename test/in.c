@@ -1,27 +1,40 @@
-int func()
+/*
+int out(int a)
 {
-    int a = 1+2*3;
-    return a*10;
+    putchar(a);
 }
-
-int main()
+*/
+int div(int a, int b)
 {
-    int i = 0;
     int sum = 0;
 
-    if(i)
-        i = 100;
-    if(sum) 
-        func();
-    else {
-        10*func()+10;
-        func();
+    while(a > b) {
+        sum++;
+        a = a - b;
     }
-    while(i) {
-        i = i + 1;
-        func();
+    if(a == b)
+        sum++;
+    return sum;
+}
+int out_num(int n)
+{
+    int max;
+    int r;
+    int f = 0;
+
+    for(max = 10; max; max = div(max, 10)) {
+        r = div(n, max);
+        n = n - (r * max);
+        if(r > 0)
+            f = 1;
+        if(f)
+            out(r + 48);
     }
-    for(i = 100; i; i = i -1)
-        sum = sum + i;
-    return sum + 1;
+    return 0;
+}
+int main()
+{
+    //int n = div(15, 2);
+    //out(n + 48);
+    out_num(13);
 }

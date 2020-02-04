@@ -267,9 +267,9 @@ static void lda(Ast *ast)
         emit("  BSA PUSH");
         sp--;
     } else if(ast->type == AST_LVAR) {
-        struct symbol *r;
+         struct symbol *r;
         if((r = sym_local->read(sym_local, ast->varname)) != NULL) {
-            emit("  LDA %s", push_const(r->offset, NULL));
+             emit("  LDA %s", push_const(r->offset, NULL));
             emit("  BSA OSET");
             emit("  BSA PUSH");
             sp--;
@@ -296,8 +296,8 @@ static void lda(Ast *ast)
         emit("  BSA %s", ast->fname);
         emit("  BSA CALL");
         */
-        emit("  BSA PUSH");
-        sp--;
+        //emit("  BSA PUSH");
+        //sp--;
     } else {
         error("error");
     }
@@ -529,9 +529,12 @@ static void emit_func_body(Ast *ast)
                 emit("  CMA");
                 emit("  INC");
                 emit("  ADD R1");
+                emit("  CLE");
                 emit("  SZA");
-                emit("  LDA N1");
-                emit("  INC");
+                emit("  CME");
+                emit("  CME");
+                emit("  CLA");
+                emit("  CIL");
                 emit("  BSA PUSH");
             } else
                 error("err EQ");
@@ -541,13 +544,41 @@ static void emit_func_body(Ast *ast)
             if(ast->left == NULL && ast->right != NULL) {
                 lda(ast->right);
                 emit("  BSA POP");
+                emit("  CLE");
                 emit("  SZA");
-                emit("  LDA N1");
-                emit("  INC");
+                emit("  CMA");
+                emit("  CMA");
+                emit("  CLA");
+                emit("  CIL");
                 emit("  BSA PUSH");
             } else
-                error("err !");
-
+                 error("err !");
+            break;
+        }
+        case '<':
+        case '>': {
+            if(ast->left != NULL && ast->right != NULL) {
+                lda(ast->left);
+                lda(ast->right);
+                emit("  BSA POP");
+                emit("  CMA");
+                emit("  INC");
+                emit("  STA R1");
+                emit("  BSA POP");
+                emit("  ADD R1");
+                emit("  CLE");
+                if(ast->ival == '<')
+                    emit("  SNA");
+                else
+                    emit("  SPA");
+                emit("  CME");
+                emit("  CME");
+                emit("  CLA");
+                emit("  CIL");
+                emit("  BSA PUSH");
+            } else 
+                 error("err >");
+            break;
         }
         }
         break;
@@ -578,8 +609,8 @@ static void emit_func_body(Ast *ast)
     }
     case AST_FUNCALL: {
         List *r = list_reverse(ast->args);
-
-        for (Iter i = list_iter(r); !iter_end(i);) {
+        int count = 0;
+        for (Iter i = list_iter(r); !iter_end(i); count++) {
             Ast *v = iter_next(&i);
             emit_func_body(v);
             if(v != NULL && v->type == AST_FUNCALL)
@@ -587,6 +618,13 @@ static void emit_func_body(Ast *ast)
         }
         emit("  BSA %s", ast->fname);
         emit("  BSA CALL");
+        emit("  STA R1");
+        emit("  LDA SP");
+        emit("  ADD %s", push_const(count, NULL)); 
+        emit("  STA SP");
+        emit("  LDA R1");
+        emit("  BSA PUSH");
+        sp = sp+count-1;
         list_free(r);
         break;
     }

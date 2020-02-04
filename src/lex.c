@@ -11,7 +11,7 @@ static token *ungotten = NULL;
 static token *read_punct(int punct)
 {
     int ch;
-    int reg;
+    int reg = 0;
 
     switch(punct) {
         case '=':
@@ -30,7 +30,7 @@ static token *read_punct(int punct)
             reg = PUNCT_DEC;
             break;
     }
-    if((ch = getchar()) == punct)
+    if((ch = getchar()) == punct && reg)
         punct = reg;
     else
         ungetc(ch, stdin);

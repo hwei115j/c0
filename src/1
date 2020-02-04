@@ -86,6 +86,7 @@ static Ast *stmt_expr(int prec)
         }
         int prec2 = priority(tok);
         if(prec2 < 0 || prec <= prec2) {
+            fprintf(stderr, "p = %c\n", tok->ch);
             unget_token(tok);
             return ast;
         }
@@ -133,6 +134,7 @@ static Ast *ident_or_func(char *id)
 
     if(is_punct(tok, '(')) {
         while(1) {
+            fprintf(stderr, "%c\n", tok->ch); 
             list_push(args, expr());
             tok = peek_token();
             if(is_punct(tok, ','))
@@ -179,7 +181,7 @@ static int priority(token *tok)
             return 9;
         case '=':
             return 16;
-        default:
+        defaule:
             return -1;
     }
 }

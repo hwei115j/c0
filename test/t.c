@@ -1,7 +1,5 @@
-int func(int a, int b, int c)
-{
-    return c;
-}
 int main()
 {
+    if(1 == 1)
+        out(48);
 }
