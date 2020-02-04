@@ -82,9 +82,9 @@ static void emit(char *fmt, ...)
         SCR(sym, 0);
         return ;
     }
-    SCR(sym, 8);
+    SCR(sym, 16);
     CR(com, 8);
-    CR(par, 8);
+    CR(par, 16);
     CR(si, 1);
     printf("\n");
 }

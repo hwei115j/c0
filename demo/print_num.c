@@ -1,9 +1,7 @@
 /*
-int out(int a)
-{
-    putchar(a);
-}
-*/
+ *      int out_num(int)
+ *      輸出數字
+ */
 int div(int a, int b)
 {
     int sum = 0;
