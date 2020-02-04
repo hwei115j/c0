@@ -45,6 +45,9 @@ void p_ast(Ast *ast)
         p_list(ast->stmts);
         printf(")");
     }
+    if(ast->type == AST_STRING) {
+        printf("\"%s\" ", ast->sval);
+    }
     if(ast->type == AST_LITERAL){
         printf("%d ", ast->ival);
     }

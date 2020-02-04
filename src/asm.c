@@ -377,7 +377,7 @@ static void emit_func_body(Ast *ast)
             } else {
                 lda(ast->right);
                 emit("  BSA POP");
-                emit("  CMP");
+                emit("  CMA");
                 emit("  INC");
                 emit("  BSA PUSH");
             }

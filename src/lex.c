@@ -5,6 +5,12 @@
 #include "c0.h"
 
 #define MAX_STR 150
+#define error(STR) pferror(STR, __LINE__)
+static void pferror(char *s, int line)
+{
+    fprintf(stderr, "lex.c %d:%s error!\n",line, s);
+    exit(1);
+}
 
 static token *ungotten = NULL;
 
@@ -59,13 +65,14 @@ static token *read_id()
     return r;
 }
 
-static token *read_num()
+static token *read_num(int f)
 {
     int i = 0, ch;
     char *lexeme = malloc(sizeof(char)*MAX_STR);
     token *r = malloc(sizeof(token));
 
-    for(i = 0; isdigit(ch = getchar()); i++)
+    lexeme[0] = f;
+    for(i = 1; isdigit(ch = getchar()); i++)
         lexeme[i] = ch;
     lexeme[i] = '\0';
     ungetc(ch, stdin);
@@ -91,42 +98,19 @@ static token *read_str()
 }
 static token *read_char()
 {
+    int i = 0, ch = getchar();
+    char *lexeme = malloc(sizeof(char)*MAX_STR);
     token *r = malloc(sizeof(token));
-    r->type = Char;
-    r->ch = getchar();
+
+    if(getchar() != '\'')
+        error("'...'");
+    sprintf(lexeme, "%d", ch);
+    r->type = Num;
+    r->sval = lexeme;
 
     return r;
 }
-/*
-static int getnext()
-{
-    int ch = getchar();
 
-    while(ch != '\n' && isspace(ch) && ch != ' ') {
-
-        //while((ch = getchar()) == '\n' && isspace(ch));
-        while(ch == '\n' || ch == ' ' && isspace(ch))
-            ch = getchar();
-
-        if(ch == '/') {
-            ch = getchar();
-
-            if(ch == '/') {
-                while((ch = getchar()) != '\n' && ch != EOF);
-            } else if(ch == '*') {
-                while(ch != EOF && (ch = getchar()) != EOF) {
-                    if(ch == '*' && (ch = getchar()) == '/') {
-                        break;
-                    }
-                }
-            } else {
-                ungetc(ch, stdin);
-            }
-        }
-    }
-    return ch;
-}
-*/
 static token *gettoken()
 {
     int ch;
@@ -140,7 +124,7 @@ static token *gettoken()
     switch(ch) {
         case '0' ... '9':
             ungetc(ch, stdin);
-            return read_num();
+            return read_num('+');
         case 'A' ... 'Z':
         case 'a' ... 'z':
         case '_':
@@ -172,14 +156,25 @@ static token *gettoken()
                 ch = '/';
             }
         }
+        /* 空格在這版的詞法分析很重要
+         * 目前沒有能力處理同個符號的多個優先級
+         * 例如1 -2會是(1)(-2)
+         * 要寫成 1 + 2才會是(1)-(2)
+         */
+        case '-': {
+            int rc = getchar();
+            ungetc(rc, stdin);
+            if(isdigit(rc)) {
+                return read_num(ch);
+            }
+        }
+        case '+':
         case '\\':
         case '!':
         case '&':
         case '|':
         case '>':
         case '<':
-        case '+':
-        case '-':
         case '*':
         case '(':
         case ')':

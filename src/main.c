@@ -23,6 +23,9 @@ void p_ast(Ast *ast)
         printf("AST_COMPOUND node = %x\n", ast);
         p_list(ast->stmts);
     }
+    if(ast->type == AST_STRING) {
+        printf("AST_STRING  node = %x size = %d ival = %d sval = %s\n",ast, ast->ctype->size, ast->ival, ast->sval);
+    }
     if(ast->type == AST_LITERAL)
         printf("AST_LITERAL node = %x size = %d ival = %d sval = %s\n",ast, ast->ctype->size, ast->ival, ast->varname);
     if(ast->type == TTYPE_PUNCT) {

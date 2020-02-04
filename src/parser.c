@@ -116,6 +116,18 @@ static Ast *unary_expr()
         ast->ival = atoi(tok->sval);
         return ast;
     }
+    if(tok->type == Str) {
+        int n = strlen(tok->sval);
+        Ctype *r = malloc(sizeof(Ctype));
+        *r = (Ctype){CTYPE_ARRAY, n, NULL};
+
+        Ast *ast = new_ast();
+        ast->type = AST_STRING;
+        ast->ctype = r;
+        ast->sval = tok->sval;
+        return ast;
+
+    }
     else if(tok->type == Id) {
         return ident_or_func(tok->sval);
     }
