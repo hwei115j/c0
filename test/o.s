@@ -4,17 +4,6 @@
 main,           DEC     0                
                 BSA     GETF             
                 BUN     main            I
-                LDA     0                
-                BSA     OSET             
-                BSA     PUSH             
-                BSA     out              
-                BSA     CALL             
-                STA     R1               
-                LDA     SP               
-                ADD     1                
-                STA     SP               
-                LDA     R1               
-                BSA     PUSH             
                 CMA                      
                 BSA     RET              
                 ORG     1000             
@@ -113,7 +102,15 @@ R1,             DEC     0
 .R3,            DEC     0                
 .R4,            DEC     0                
 N1,             DEC     -1               
-0,              DEC     0                
-1,              DEC     1                
+.s0,            DEC     97               
+                DEC     100              
+                DEC     115              
+                DEC     102              
+                DEC     100              
+                DEC     115              
+                DEC     102              
+                DEC     102              
+                DEC     100              
+                DEC     0                
 3,              DEC     3                
                 END                      

@@ -6,18 +6,22 @@
 #include "c0.h"
 
 #define CR(STR, NUM) do{int _n = printf("%s", STR); for(int i = _n; i < NUM; i++) printf(" ");}while(0);
-#define error(STR) pferror(STR, __LINE__)
-static void pferror(char *s, int line)
-{
-    fprintf(stderr, "asm.c %d:%s error!\n",line, s);
-    exit(1);
-}
-
 struct sym_obj *sym_global;
 struct sym_obj *sym_local;
 static int sp;
 static int rc;
 
+static char *mkstr(char *fmt, ...)
+{
+    va_list args;
+    char *buf = malloc(sizeof(char)*100);
+
+    va_start(args, fmt);
+    vsprintf(buf, fmt, args);
+    va_end(args);
+    
+    return buf;
+}
 static char *push_const(int n, Ctype *type)
 {
     struct symbol *r;
@@ -31,7 +35,7 @@ static char *push_const(int n, Ctype *type)
         r.name = str;
         r.data = atoi(str);
         if(type == NULL)
-            r.type = (Ctype) {
+             r.type = (Ctype) {
             CTYPE_INT, 2, NULL
         };
         else
@@ -111,6 +115,7 @@ static const char *getype(int type)
     case CTYPE_STRUCT:
         return "struct";
     }
+    return NULL;
 }
 static void print_func()
 {
@@ -214,6 +219,17 @@ static void print_func()
     emit("NUM,   DEC 48");
 }
 
+static void emit_data(struct symbol *reg)
+{
+    if(reg->type.type == CTYPE_ARRAY) {
+        emit("%s,   DEC %d", reg->name, reg->str[0]);
+        for(int i = 1; reg->str[i]; i++)
+            emit("   DEC %d", reg->str[i]);
+        emit("  DEC 0"); 
+    }
+    else
+        emit("%s,   DEC %d", reg->name, reg->data);
+}
 static void print_global()
 {
     emit("SP,   DEC 3999");
@@ -227,7 +243,7 @@ static void print_global()
 
     for (Iter i = list_iter(sym_global->symbol); !iter_end(i);) {
         struct symbol *reg = iter_next(&i);
-        emit("%s,   DEC %d", reg->name, reg->data);
+        emit_data(reg);
     }
 }
 
@@ -589,8 +605,16 @@ static void emit_func_body(Ast *ast)
         sp--;
         break;
     }
-    case AST_STRING:
+    case AST_STRING: {
+        static int count = 0;
+
+        struct symbol r;
+        r.name = mkstr(".s%d", count++);
+        r.str = ast->sval;
+        r.type = *ast->ctype; 
+        sym_global->add(sym_global, &r);
         break;
+    }
     case AST_LVAR: {
         struct symbol *s;
         if((s = sym_local->read(sym_local, ast->varname)) != NULL) {

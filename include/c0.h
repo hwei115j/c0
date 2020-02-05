@@ -1,6 +1,14 @@
 #ifndef __C0_H_
 #define __C0_H_
 #include "list.h"
+
+#define error(STR) pferror(STR, __FILE__, __LINE__)
+static inline void pferror(char *s,char *file, int line)
+{
+    fprintf(stderr, "%s %d:%s error!\n",file, line, s);
+    exit(1);
+}
+
 enum {
    Unkonwn = 128,
    TTYPE_PUNCT,

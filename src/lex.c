@@ -5,12 +5,6 @@
 #include "c0.h"
 
 #define MAX_STR 150
-#define error(STR) pferror(STR, __LINE__)
-static void pferror(char *s, int line)
-{
-    fprintf(stderr, "lex.c %d:%s error!\n",line, s);
-    exit(1);
-}
 
 static token *ungotten = NULL;
 
@@ -88,8 +82,11 @@ static token *read_str()
     token *r = malloc(sizeof(token));
     int ch, i;
 
-    for(i = 0; (ch = getchar()) != '"'; i++)
+    for(i = 0; (ch = getchar()) != '"'; i++) {
         lexeme[i] = ch;
+        if(ch == EOF)
+            error(" \"");
+    }
     lexeme[i] = '\0';
     r->type = Str;
     r->sval = lexeme;

@@ -10,6 +10,8 @@ struct symbol {
     union {
         int data;
         int offset;
+        char *str;
+        void *ptr;
     };
     Ctype type;                
 };
