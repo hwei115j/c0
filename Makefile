@@ -1,8 +1,9 @@
 TARGET = c
 
-OBJ = lex.o parser.o
-ASM = asm.c lex.c parser.c
-SEXP = sexp.c lex.c parser.c
+PAR = n_parser
+OBJ = lex.o $(PAR).o
+ASM = asm.c lex.c $(PAR).c
+SEXP = sexp.c lex.c $(PAR).c
 CC = gcc
 
 CFLAGS = 
