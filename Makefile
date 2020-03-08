@@ -1,6 +1,6 @@
 TARGET = c
 
-PAR = n_parser
+PAR = parser
 OBJ = lex.o $(PAR).o
 ASM = asm.c lex.c $(PAR).c
 SEXP = sexp.c lex.c $(PAR).c

@@ -35,14 +35,19 @@ enum {
     AST_RETURN,
     AST_COMPOUND_STMT,
     AST_STRUCT_REF,
+    AST_ASSIGNMENT_EXPR,
     PUNCT_EQ,
     PUNCT_INC,
     PUNCT_DEC,
     PUNCT_LOGAND,
     PUNCT_LOGOR,
     PUNCT_ARROW,
+
     PUNCT_CIR,
-    PUNCT_CIL
+    PUNCT_CIL,
+    PUNCT_NE,
+    PUNCT_GE,
+    PUNCT_LE
 };
 
 enum {
