@@ -164,7 +164,8 @@ typedef struct __Ast {
 
         /* Compound statement */
         List *stmts;
-
+        
+        List *exprs;
         /* Struct reference */
         struct {
             struct __Ast *struc;

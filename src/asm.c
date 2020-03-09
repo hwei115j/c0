@@ -442,6 +442,7 @@ static void emit_func_body(Ast *ast)
         case PUNCT_INC: {
             struct symbol *r;
             if(ast->right != NULL) {
+                //++i, --i
                 if(ast->right->type != AST_LVAR && ast->right->type != AST_GVAR)
                     error("lvar");
                 if((r = sym_local->read(sym_local, ast->right->varname)) != NULL) {
@@ -463,6 +464,7 @@ static void emit_func_body(Ast *ast)
                 } else
                     error("error");
             } else if(ast->left != NULL) {
+                //i++, i--
                 if(ast->left->type != AST_LVAR && ast->left->type != AST_GVAR)
                     error("lvar");
                 if((r = sym_local->read(sym_local, ast->left->varname)) != NULL) {

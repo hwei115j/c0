@@ -49,7 +49,8 @@ static Ast *ident_or_func(char *);
 static Ast *iteration_stmt();
 static Ast *while_stmt();
 
-static Ast *expression();
+static int is_assig_opt(token *);
+//static Ast *expression();
 static Ast *assignment_expr();
 static Ast *conditional_expr();
 static Ast *logical_or_expr();
@@ -58,17 +59,35 @@ static Ast *inclusive_or_expr();
 static Ast *exclusive_or_expr();
 static Ast *and_expr();
 static Ast *equality_expr();
+static Ast *relational_expr();
+static Ast *shift_expr();
+static Ast *additive_expr();
+static Ast *multiplicative_expr();
+static Ast *cast_expr();
+static Ast *postfix_expr();
+static Ast *primary_expr();
 
-static Ast *expression()
+static int is_assig_opt(token *tok)
+{
+    if(is_punct(tok, '=') || is_punct(tok, PUNCT_NE) || is_punct(tok, PUNCT_GE) || is_punct(tok, PUNCT_LE))
+        return 1;
+    return 0;
+}
+static Ast *expr()
+{
+    return assignment_expr();
+}
+/*
+static Ast *expr()
 {
     Ast *ast = assignment_expr();
     token *tok = read_token();
     List *exprs = make_list();
 
-    list(exprs, ast);
+    list_push(exprs, ast);
     while(is_punct(tok, ',')) {
         ast = assignment_expr();
-        list(exprs, ast);
+        list_push(exprs, ast);
         tok = read_token();
     }
 
@@ -79,7 +98,7 @@ static Ast *expression()
     
     return ast;
 }
-
+*/
 static Ast *assignment_expr()
 {
     Ast *ast = conditional_expr();
@@ -100,7 +119,8 @@ static Ast *conditional_expr()
     token *tok = read_token();
 
     if(is_punct(tok, '?')) {
-        Ast *r = expression();
+        //Ast *r = expression();
+        Ast *r = expr();
         token *rtok = read_token();
         if(!is_punct(rtok, ':'))
             error("next is ':' ");
@@ -128,7 +148,7 @@ static Ast *logical_or_expr()
     return ast;
 }
 
-static Ast *logal_and_expr()
+static Ast *logical_and_expr()
 {
     Ast *ast = inclusive_or_expr();
     token *tok = read_token();
@@ -203,7 +223,7 @@ static Ast *relational_expr()
     Ast *ast = shift_expr();
     token *tok = read_token();
 
-    while(is_punct(tok, '<') || is_punct(tok, '>') || is_punct(tok, PUNCT_LE)) || is_punct(tok, PUNCT_GE) {
+    while(is_punct(tok, '<') || is_punct(tok, '>') || is_punct(tok, PUNCT_LE) || is_punct(tok, PUNCT_GE)) {
         ast = ast_binop(tok->punct, ast, shift_expr());
         tok = read_token();
     }
@@ -258,23 +278,24 @@ static Ast *cast_expr()
 {
     token *tok = read_token();
     Ast *ast;
-    
+   
+    /*
     if(is_punct(tok, '(')) {
-        Ast *ast = type_name();
+        //Ast *ast = type_name();
         expect(')');
         cast_expr();
     }
-
+*/
     unget_token(tok);
     return unary_expr();
 }
 
-
+/*
 static Ast *expr()
 {
     return stmt_expr(18);
 }
-
+*/
 List *statement()
 {
     List *list = make_list();
@@ -312,12 +333,95 @@ static Ast *unary_expr()
 {
     token *tok = read_token();
 
+    if(is_punct(tok, PUNCT_INC) || is_punct(tok, PUNCT_DEC)) {
+        return ast_binop(tok->punct,NULL, unary_expr());
+    }
+    else if(is_punct(tok, '&') ||is_punct(tok, '*') ||is_punct(tok, '+')\
+            ||is_punct(tok, '-') ||is_punct(tok, '~') ||is_punct(tok, '!'))  {
+        return ast_binop(tok->punct, cast_expr(), NULL);
+    }
+    
+    unget_token(tok);
+    return postfix_expr();
+}
+
+static Ast *postfix_expr()
+{
+    Ast *ast = primary_expr();
+    token *tok = read_token();
+
+    if(is_punct(tok, '[')) {
+        ;
+    }
+    if(is_punct(tok, PUNCT_INC) || is_punct(tok, PUNCT_DEC)) {
+        return ast_binop(tok->punct, ast, NULL);
+    }
+
+    unget_token(tok);
+    return ast;
+}
+
+static Ast *primary_expr()
+{
+    token *tok = read_token();
+
+    if(is_punct(tok, '(')) {
+        Ast *ast = expr();
+        expect(')');
+        return ast;
+    }
+    if(tok->type == Num) {
+        Ast *ast = new_ast();
+        ast->type = AST_LITERAL;
+        ast->ctype = ctype_int;
+        ast->ival = atoi(tok->sval);
+        return ast;
+    }
+    if(tok->type == Str) {
+        int n = strlen(tok->sval);
+        Ctype *r = malloc(sizeof(Ctype));
+        *r = (Ctype){CTYPE_ARRAY, n, NULL};
+
+        Ast *ast = new_ast();
+        ast->type = AST_STRING;
+        ast->ctype = r;
+        ast->sval = tok->sval;
+        return ast;
+
+    }
+    else if(tok->type == Id) {
+        return ident_or_func(tok->sval);
+    }
+    else {
+        error("primary_expr");
+    }
+
+}
+#if 0
+static Ast *unary_expr()
+{
+
+    token *tok = read_token();
+
     if(tok->type == TTYPE_PUNCT) {
         if(is_punct(tok, '(')) {
             Ast *ast = expr();
             expect(')');
             return ast;
         }
+        else if(is_punct(tok, PUNCT_INC) || is_punct(tok, PUNCT_DEC)) {
+            Ast *ast = unary_expr();
+            ast = ast_binop(tok->punct,NULL, ast);
+            return ast;
+        }
+        /*
+        else if(is_punct(tok, '&') ||is_punct(tok, '*') ||is_punct(tok, '+')\
+                ||is_punct(tok, '-') ||is_punct(tok, '~') ||is_punct(tok, '!'))  {
+            Ast *ast = cast_expr();
+            ast = ast_binop(tok->punct, ast, NULL);
+            return ast;
+        }
+        */
         else {
             unget_token(tok);
             return NULL;
@@ -350,7 +454,7 @@ static Ast *unary_expr()
     }
 
 }
-
+#endif
 static Ast *ident_or_func(char *id)
 {
     Ast *ast = new_ast();

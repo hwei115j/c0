@@ -34,9 +34,64 @@ int out_num(int n)
     }
     return 0;
 }
+int spa(int n)
+{
+    out_num(n);
+    out(' ');
+    out(' ');
+    if(div(n, 10) == 0)
+        out(' ');
+    return 0;
+}
+int fib(int n)
+{
+    if(n == 0)
+        return 0;
+    if(n < 3)
+        return 1;
+    return fib(n - 1) + fib(n - 2);
+}
 int main()
 {
-    //int n = div(15, 2);
-    //out(n + 48);
-    out_num(3452);
+    int max = 0;
+    int i;
+    int j; 
+
+    //1+2+3+....+100
+    for(i = 0; i < 101; i++)
+        max = max + i;
+    out_num(max);
+
+#if 0
+    //星星
+    for(i = 0; i < 10; i++) {
+        for(j = 0; j < i; j++)
+            out('*');
+        out('\n');
+    }
+    //99乘法表
+    int r;
+    for(i = 1; i < 10; i++) {
+        for(j = 1; j < 10; j++) {
+            out_num(j);
+            out('*');
+            out_num(i);
+            out('=');
+            spa(i*j);
+        }
+        out('\n');
+    }
+
+    //費氏數列
+    out('f');
+    out('i');
+    out('b');
+    out('(');
+    out_num(23);
+    out(')');
+    out('=');
+    out_num(fib(23));
+    out('\n');
+    //out_num(3452);
+#endif
 }
