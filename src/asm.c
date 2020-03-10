@@ -283,9 +283,9 @@ static void lda(Ast *ast)
         emit("  BSA PUSH");
         sp--;
     } else if(ast->type == AST_LVAR) {
-         struct symbol *r;
+        struct symbol *r;
         if((r = sym_local->read(sym_local, ast->varname)) != NULL) {
-             emit("  LDA %s", push_const(r->offset, NULL));
+            emit("  LDA %s", push_const(r->offset, NULL));
             emit("  BSA OSET");
             emit("  BSA PUSH");
             sp--;
@@ -314,7 +314,10 @@ static void lda(Ast *ast)
         */
         //emit("  BSA PUSH");
         //sp--;
-    } else {
+    } else if(ast->type == AST_ASSIGNMENT_EXPR) {
+        emit_func_body(ast);
+    }
+    else {
         error("error");
     }
 }
@@ -336,10 +339,18 @@ static void emit_func_body(Ast *ast)
             } else {
                 emit_func_body(reg);
             }
+        
         }
 
         sym_del(sym_local);
         sym_local = reg;
+        break;
+    }
+    case AST_ASSIGNMENT_EXPR: {
+        for (Iter i = list_iter(ast->exprs); !iter_end(i);) {
+            Ast *v = iter_next(&i);
+            emit_func_body(v);
+        }
         break;
     }
     case TTYPE_PUNCT: {
@@ -639,8 +650,10 @@ static void emit_func_body(Ast *ast)
         for (Iter i = list_iter(r); !iter_end(i); count++) {
             Ast *v = iter_next(&i);
             emit_func_body(v);
+            /*
             if(v != NULL && v->type == AST_FUNCALL)
                 emit("  BSA PUSH");
+                */
         }
         emit("  BSA %s", ast->fname);
         emit("  BSA CALL");

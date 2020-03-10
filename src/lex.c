@@ -99,6 +99,22 @@ static token *read_char()
     char *lexeme = malloc(sizeof(char)*MAX_STR);
     token *r = malloc(sizeof(token));
 
+    if(ch == '\\') {
+        switch(getchar()) {
+            case 'n':
+                ch = '\n';
+                break;
+            case 't':
+                ch = '\t';
+                break;
+            case '\\':
+                ch = '\\';
+                break;
+            case '\'':
+                ch = '\\';
+                break;
+        }
+    }
     if(getchar() != '\'')
         error("'...'");
     sprintf(lexeme, "%d", ch);
@@ -180,7 +196,6 @@ static token *gettoken()
         case ';':
         case '{':
         case '}':
-        case '\n':
             return read_punct(ch);
         case  EOF:
             return NULL;

@@ -41,9 +41,9 @@ void p_ast(Ast *ast)
         printf(")");
     }
     if(ast->type == AST_COMPOUND_STMT) {
-        printf("(AST_COMPOUND_STMT");
+//        printf("(AST_COMPOUND_STMT");
         p_list(ast->stmts);
-        printf(")");
+//        printf(")");
     }
     if(ast->type == AST_STRING) {
         printf("\"%s\" ", ast->sval);
@@ -70,11 +70,11 @@ void p_ast(Ast *ast)
                 break;
             default:
                 printf("(%c ", ast->ival);
-                break;
+                break ;
         }
         p_ast(ast->left);
         p_ast(ast->right);
-        printf(")");
+        printf(")"); 
     }
     if(ast->type == AST_DECL) {
         printf("(AST_DECL (= ");
@@ -128,11 +128,18 @@ void p_ast(Ast *ast)
         p_ast(ast->whilebody);
         printf("))");
     }
+    if(ast->type == AST_ASSIGNMENT_EXPR) {
+        for (Iter i = list_iter(ast->exprs); !iter_end(i);) {
+            Ast *v = iter_next(&i);
+            p_ast(v);
+        }
+        //fprintf(stderr, ".....\n");
+    }
 }
 
 void p_list(List *list)
 {
-    for (Iter i = list_iter(list); !iter_end(i);) {
+    for(Iter i = list_iter(list); !iter_end(i);) {
         Ast *v = iter_next(&i);
         p_ast(v);
     }

@@ -57,12 +57,12 @@ int main()
     int i;
     int j; 
 
+    fib(10);
     //1+2+3+....+100
     for(i = 0; i < 101; i++)
         max = max + i;
     out_num(max);
 
-#if 0
     //星星
     for(i = 0; i < 10; i++) {
         for(j = 0; j < i; j++)
@@ -93,5 +93,4 @@ int main()
     out_num(fib(23));
     out('\n');
     //out_num(3452);
-#endif
 }

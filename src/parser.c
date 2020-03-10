@@ -49,9 +49,244 @@ static Ast *ident_or_func(char *);
 static Ast *iteration_stmt();
 static Ast *while_stmt();
 
+static int is_assig_opt(token *);
+static Ast *assignment_expr();
+static Ast *conditional_expr();
+static Ast *logical_or_expr();
+static Ast *logical_and_expr();
+static Ast *inclusive_or_expr();
+static Ast *exclusive_or_expr();
+static Ast *and_expr();
+static Ast *equality_expr();
+static Ast *relational_expr();
+static Ast *shift_expr();
+static Ast *additive_expr();
+static Ast *multiplicative_expr();
+static Ast *cast_expr();
+static Ast *postfix_expr();
+static Ast *primary_expr();
+
+static int is_assig_opt(token *tok)
+{
+    if(is_punct(tok, '=') || is_punct(tok, PUNCT_NE) || is_punct(tok, PUNCT_GE) || is_punct(tok, PUNCT_LE))
+        return 1;
+    return 0;
+}
+/*
 static Ast *expr()
 {
-    return stmt_expr(18);
+    return assignment_expr();
+}
+*/
+static Ast *expr()
+{
+    Ast *ast = assignment_expr();
+    token *tok = read_token();
+    List *exprs = make_list();
+
+    list_push(exprs, ast);
+    while(is_punct(tok, ',')) {
+        ast = assignment_expr();
+        list_push(exprs, ast);
+        tok = read_token();
+    }
+
+    unget_token(tok);
+    ast = new_ast();
+    ast->type = AST_ASSIGNMENT_EXPR;
+    ast->exprs = exprs;
+    
+    return ast;
+}
+static Ast *assignment_expr()
+{
+    Ast *ast = conditional_expr();
+    token *tok = read_token();
+    
+    if(is_assig_opt(tok)) {
+        Ast *r = assignment_expr();
+        return ast_binop(tok->punct, ast, r);
+    }
+    unget_token(tok);
+
+    return ast;
+}
+
+static Ast *conditional_expr()
+{
+    Ast *ast = logical_or_expr();
+    token *tok = read_token();
+
+    if(is_punct(tok, '?')) {
+        //Ast *r = expression();
+        Ast *r = expr();
+        token *rtok = read_token();
+        if(!is_punct(rtok, ':'))
+            error("next is ':' ");
+        Ast *l = conditional_expr();
+        r = ast_binop(rtok->punct, r, l);
+
+        return ast_binop(tok->punct, ast, r);
+    }
+    unget_token(tok);
+
+    return ast;
+}
+
+
+static Ast *logical_or_expr()
+{
+    Ast *ast = logical_and_expr();
+    token *tok = read_token();
+
+    while(is_punct(tok, PUNCT_LOGOR)) {
+        ast = ast_binop(tok->punct, ast, logical_and_expr());
+        tok = read_token();
+    }
+    unget_token(tok);
+    return ast;
+}
+
+static Ast *logical_and_expr()
+{
+    Ast *ast = inclusive_or_expr();
+    token *tok = read_token();
+
+    while(is_punct(tok, PUNCT_LOGAND)) {
+        ast = ast_binop(tok->punct, ast, inclusive_or_expr());
+        tok = read_token();
+    }
+
+    unget_token(tok);
+    return ast;
+}
+
+static Ast *inclusive_or_expr()
+{
+    Ast *ast = exclusive_or_expr();
+    token *tok = read_token();
+
+    while(is_punct(tok, '|')) {
+        ast = ast_binop(tok->punct, ast, exclusive_or_expr());
+        tok = read_token();
+    }
+
+    unget_token(tok);
+    return ast;
+}
+
+static Ast *exclusive_or_expr()
+{
+    Ast *ast = and_expr();
+    token *tok = read_token();
+
+    while(is_punct(tok, '^')) {
+        ast = ast_binop(tok->punct, ast, and_expr());
+        tok = read_token();
+    }
+
+    unget_token(tok);
+    return ast;
+}
+
+static Ast *and_expr()
+{
+    Ast *ast = equality_expr();
+    token *tok = read_token();
+
+    while(is_punct(tok, '&')) {
+        ast = ast_binop(tok->punct, ast, equality_expr());
+        tok = read_token();
+    }
+
+    unget_token(tok);
+    return ast;
+}
+
+static Ast *equality_expr()
+{
+    Ast *ast = relational_expr();
+    token *tok = read_token();
+
+    while(is_punct(tok, PUNCT_EQ) || is_punct(tok, PUNCT_NE)) {
+        ast = ast_binop(tok->punct, ast, relational_expr());
+        tok = read_token();
+    }
+
+    unget_token(tok);
+    return ast;
+}
+
+static Ast *relational_expr()
+{
+    Ast *ast = shift_expr();
+    token *tok = read_token();
+
+    while(is_punct(tok, '<') || is_punct(tok, '>') || is_punct(tok, PUNCT_LE) || is_punct(tok, PUNCT_GE)) {
+        ast = ast_binop(tok->punct, ast, shift_expr());
+        tok = read_token();
+    }
+
+    unget_token(tok);
+    return ast;
+}
+
+static Ast *shift_expr()
+{
+    Ast *ast = additive_expr();
+    token *tok = read_token();
+
+    while(is_punct(tok, PUNCT_CIL) || is_punct(tok, PUNCT_CIR)) {
+        ast = ast_binop(tok->punct, ast, additive_expr());
+        tok = read_token();
+    }
+
+    unget_token(tok);
+    return ast;
+}
+
+static Ast *additive_expr()
+{
+    Ast *ast = multiplicative_expr();
+    token *tok = read_token();
+
+    while(is_punct(tok, '+') || is_punct(tok, '-')) {
+        ast = ast_binop(tok->punct, ast, multiplicative_expr());
+        tok = read_token();
+    }
+
+    unget_token(tok);
+    return ast;
+}
+
+static Ast *multiplicative_expr()
+{
+    Ast *ast = cast_expr();
+    token *tok = read_token();
+
+    while(is_punct(tok, '*') || is_punct(tok, '/') || is_punct(tok, '%')) {
+        ast = ast_binop(tok->punct, ast, cast_expr());
+        tok = read_token();
+    }
+
+    unget_token(tok);
+    return ast;
+}
+
+static Ast *cast_expr()
+{
+    token *tok = read_token();
+    Ast *ast;
+   
+    /*
+    if(is_punct(tok, '(')) {
+        //Ast *ast = type_name();
+        expect(')');
+        cast_expr();
+    }
+*/
+    unget_token(tok);
+    return unary_expr();
 }
 
 List *statement()
@@ -66,41 +301,64 @@ List *statement()
     }
 }
 
-static Ast *stmt_expr(int prec)
-{
-    Ast *ast = unary_expr();
-
-    while(1) {
-        token *tok = read_token();
-        if(!tok) expect(';');
-        if(tok->type != TTYPE_PUNCT) {
-            unget_token(tok);
-            return ast;
-        }
-        int prec2 = priority(tok);
-        if(prec2 < 0 || prec <= prec2) {
-            unget_token(tok);
-            return ast;
-        }
-        Ast *rest = stmt_expr(prec2);
-        ast = ast_binop(tok->punct, ast, rest);
-    }
-}
-
 static Ast *unary_expr()
 {
     token *tok = read_token();
 
-    if(tok->type == TTYPE_PUNCT) {
-        if(is_punct(tok, '(')) {
-            Ast *ast = expr();
-            expect(')');
-            return ast;
+    if(is_punct(tok, PUNCT_INC) || is_punct(tok, PUNCT_DEC)) {
+        return ast_binop(tok->punct,NULL, unary_expr());
+    }
+    else if(is_punct(tok, '&') ||is_punct(tok, '*') ||is_punct(tok, '+')\
+            ||is_punct(tok, '-') ||is_punct(tok, '~') ||is_punct(tok, '!'))  {
+        return ast_binop(tok->punct, cast_expr(), NULL);
+    }
+    
+    unget_token(tok);
+    return postfix_expr();
+}
+
+static Ast *postfix_expr()
+{
+    Ast *ast = primary_expr();
+    token *tok = read_token();
+
+    if(is_punct(tok, '[')) {
+        ;
+    }
+    if(is_punct(tok, PUNCT_INC) || is_punct(tok, PUNCT_DEC)) {
+        return ast_binop(tok->punct, ast, NULL);
+    }
+    if(is_punct(tok, '(')) {
+        List *args = make_list();
+
+        while(1) {
+            list_push(args, assignment_expr());
+            tok = peek_token();
+            if(is_punct(tok, ','))
+                expect(',');
+            else if(is_punct(tok, ')'))
+                break;
+            else {
+                error("next is ',' or ')'!");
+            }
         }
-        else {
-            unget_token(tok);
-            return NULL;
-        }
+        expect(')');
+        ast->args = args;
+        return ast;
+    }
+
+    unget_token(tok);
+    return ast;
+}
+
+static Ast *primary_expr()
+{
+    token *tok = read_token();
+
+    if(is_punct(tok, '(')) {
+        Ast *ast = expr();
+        expect(')');
+        return ast;
     }
     if(tok->type == Num) {
         Ast *ast = new_ast();
@@ -125,18 +383,16 @@ static Ast *unary_expr()
         return ident_or_func(tok->sval);
     }
     else {
-        error("unary_expr");
+        error("primary_expr");
     }
 
 }
-
 static Ast *ident_or_func(char *id)
 {
     Ast *ast = new_ast();
-    token *tok = read_token();
-    List *args = make_list();
 
-    if(is_punct(tok, '(')) {
+    if(is_punct(peek_token(), '(')) {
+        /*
         while(1) {
             list_push(args, expr());
             tok = peek_token();
@@ -149,44 +405,15 @@ static Ast *ident_or_func(char *id)
             }
         }
         expect(')');
+        */
         ast->type = AST_FUNCALL;
-        ast->args = args;
         ast->fname = id;
         return ast;
     }
-    unget_token(tok);
     ast->type = AST_LVAR;
     ast->ctype = ctype_int;
     ast->varname = id;
     return ast;
-}
-static int priority(token *tok)
-{
-    switch(tok->punct) {
-        case PUNCT_INC:
-        case PUNCT_DEC:
-            return 2;
-        case '*':
-        case '/':
-        case '%':
-        case '!':
-            return 3;
-        case '+':
-        case '-':
-            return 4;
-        case PUNCT_CIR:
-        case PUNCT_CIL:
-            return 5;
-        case '<':
-        case '>':
-            return 6;
-        case PUNCT_EQ:
-            return 9;
-        case '=':
-            return 16;
-        default:
-            return -1;
-    }
 }
 
 static Ast *ast_binop(int punct, Ast *left, Ast *right)

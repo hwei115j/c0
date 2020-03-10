@@ -93,6 +93,13 @@ void p_ast(Ast *ast)
         p_ast(ast->forstep);
         p_ast(ast->forbody);
     }
+    if(ast->type == AST_ASSIGNMENT_EXPR) {
+        for (Iter i = list_iter(ast->exprs); !iter_end(i);) {
+            Ast *v = iter_next(&i);
+            p_ast(v);
+        }
+        //fprintf(stderr, ".....\n");
+    }
 }
 
 void p_list(List *list)
