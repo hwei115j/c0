@@ -699,8 +699,9 @@ static void emit_func_body(Ast *ast)
         break;
     case AST_ADDR:
         break;
-    case AST_DEREF:
+    case AST_DEREF: {
         break;
+    }
     case AST_IF: {
         int r = rc;
         rc+=2;

@@ -9,6 +9,7 @@ static Ctype *ctype_long = &(Ctype){CTYPE_LONG, 4, NULL};
 static Ctype *ctype_char = &(Ctype){CTYPE_CHAR, 1, NULL};
 static Ctype *ctype_float = &(Ctype){CTYPE_FLOAT, 4, NULL};
 static Ctype *ctype_double = &(Ctype){CTYPE_DOUBLE, 8, NULL};
+static char *gname;
 
 static Ast *new_ast()
 {
@@ -32,6 +33,7 @@ static int is_type_keyword(token *);
 static Ast *stmt_expr(int);
 static Ast *unary_expr();
 static Ast *ast_binop(int, Ast *, Ast *);
+static Ast *ast_uop(int, Ast *);
 static Ast *expr();
 static Ast *decl_or_func();
 static Ast *func_def(Ctype *, char *);
@@ -48,8 +50,7 @@ static Ast *ret_stmt();
 static Ast *ident_or_func(char *);
 static Ast *iteration_stmt();
 static Ast *while_stmt();
-
-static int is_assig_opt(token *);
+//expr
 static Ast *assignment_expr();
 static Ast *conditional_expr();
 static Ast *logical_or_expr();
@@ -65,6 +66,201 @@ static Ast *multiplicative_expr();
 static Ast *cast_expr();
 static Ast *postfix_expr();
 static Ast *primary_expr();
+static int is_assig_opt(token *);
+
+//decl
+static Ast *declaration();
+static void declarator(List *list);
+static Ctype *pointer(Ctype *ctype);
+
+static int calc()
+{
+    token *tok = read_token();
+    if(tok->type != Num)
+        error("");
+    return atoi(tok->sval);
+}
+
+//static Ast *declaration()
+static void dectype(Ctype *ctype)
+{
+    if(ctype->type == CTYPE_ARRAY)
+        fprintf(stderr, "arr, size = %d\n", ctype->size);
+    else if(ctype->type == CTYPE_PTR)
+        fprintf(stderr, "ptr, size = %d\n", ctype->size);
+    else if(ctype->type == CTYPE_INT)
+        fprintf(stderr, "int, size = %d\n", ctype->size);
+    else if(ctype->type == CTYPE_CHAR)
+        fprintf(stderr, "char, size = %d\n", ctype->size);
+    if(ctype->ptr != NULL)
+        dectype(ctype->ptr);
+}
+
+static Ctype *create_ctype(List *list, Ctype *ctype)
+{
+    list = list_reverse(list);
+    for (Iter i = list_iter(list); !iter_end(i);) {
+        Ctype *r = iter_next(&i);
+        r->ptr = ctype;
+        ctype = r;
+    }
+
+    return ctype;
+}
+
+static Ast *decl()
+{
+    token *tok = read_token();
+    List *list = make_list();
+    Ctype *ctype = get_ctype(tok);
+
+    if(ctype == NULL) error("next token is type specifier\n");
+    declarator(list);
+    ctype = create_ctype(list, ctype);
+
+    Ast *var = ast_var(ctype, gname, AST_LVAR);
+    
+    return decl_init(var);
+}
+
+static void declarator(List *list)
+{
+    List *l = make_list();
+    token *tok = read_token();
+
+    while(is_punct(tok, '*')) {
+        Ctype *r = malloc(sizeof(Ctype));
+        r->type = CTYPE_PTR;
+        r->size = 2;
+        list_push(l, r);
+        tok = read_token();
+    }
+
+    if(tok->type == Id) {
+        gname = tok->sval;
+        tok = read_token();
+    }
+    else if(is_punct(tok, '(')) {
+        declarator(list);
+        expect(')');
+        tok = read_token();
+    }
+
+    while(is_punct(tok, '[')) {
+        int n = calc();
+        expect(']');
+        Ctype *r = malloc(sizeof(Ctype));
+        r->type = CTYPE_ARRAY;
+        r->size = 2;
+        r->len = n;
+        list_push(list, r);
+        tok = read_token();
+    }
+    if(is_punct(tok, '(')) {
+        error("function not implemented yet;;\n");
+        //parameter-type-list
+        expect(')');
+    }
+    else 
+        unget_token(tok);
+    
+    l = list_reverse(l);
+    for(void *I; (I = list_pop(l)) != NULL;)
+        list_push(list, I);
+    return ;
+}
+#if 0
+static Ctype *declarator(Ctype *ctype)
+{
+    List *list = make_list();
+    ctype = pointer(ctype);
+
+    token *tok = read_token();
+    /*
+    while(is_punct(tok, '*')) {
+        Ctype *r = malloc(sizeof(Ctype));
+        r->type = CTYPE_PTR;
+        r->size = 2;
+        list_push(list, r);
+        tok = read_token();
+    }
+    */
+    if(tok->type == Id) {
+        gname = tok->sval;
+        tok = read_token();
+    }
+    while(is_punct(tok, '(')) {
+        tok = read_token();
+        while(is_punct(tok, '*')) {
+            Ctype *r = malloc(sizeof(Ctype));
+            r->type = CTYPE_PTR;
+            r->size = 2;
+            list_push(list, r);
+            tok = read_token();
+        }
+        if(tok->type == Id)
+            gname = tok->sval;
+        expect(')');
+        tok = read_token();
+    }
+
+    //    error("next token is '(' or Id\n");
+    if(is_punct(tok, '[')) {
+        int n = calc();
+        expect(']');
+        Ctype *r = malloc(sizeof(Ctype));
+        r->type = CTYPE_ARRAY;
+        r->size = 2;
+        r->len = n;
+        r->ptr = ctype;
+        ctype = r;
+        //list_push(list, r);
+    }
+    else if(is_punct(tok, '(')) {
+        //parameter-type-list
+        expect(')');
+    }
+    else 
+        unget_token(tok);
+
+    ctype = create_ctype(list, ctype);
+    
+    return ctype;
+#if 0
+    ctype = pointer(ctype);
+    token *tok = read_token();
+
+    if(tok->type == Id) {
+        unget_token(tok);
+        return ctype;
+    }
+    else if(is_punct(tok, '(')) {
+        ctype = declarator(ctype);
+        expect(')');
+        return ctype;
+    }
+    else
+        error("next token is '(' or Id\n");
+#endif
+}
+#endif
+
+static Ctype *pointer(Ctype *ctype)
+{
+    token *tok = read_token();
+
+    while(is_punct(tok, '*')) {
+        Ctype *r = malloc(sizeof(Ctype));
+        r->type = CTYPE_PTR;
+        r->size = 2;
+        r->ptr = ctype;
+        ctype = r;
+        tok = read_token();
+    }
+
+    unget_token(tok);
+    return ctype;
+}
 
 static int is_assig_opt(token *tok)
 {
@@ -72,12 +268,6 @@ static int is_assig_opt(token *tok)
         return 1;
     return 0;
 }
-/*
-static Ast *expr()
-{
-    return assignment_expr();
-}
-*/
 static Ast *expr()
 {
     Ast *ast = assignment_expr();
@@ -118,7 +308,6 @@ static Ast *conditional_expr()
     token *tok = read_token();
 
     if(is_punct(tok, '?')) {
-        //Ast *r = expression();
         Ast *r = expr();
         token *rtok = read_token();
         if(!is_punct(rtok, ':'))
@@ -308,9 +497,15 @@ static Ast *unary_expr()
     if(is_punct(tok, PUNCT_INC) || is_punct(tok, PUNCT_DEC)) {
         return ast_binop(tok->punct,NULL, unary_expr());
     }
-    else if(is_punct(tok, '&') ||is_punct(tok, '*') ||is_punct(tok, '+')\
-            ||is_punct(tok, '-') ||is_punct(tok, '~') ||is_punct(tok, '!'))  {
-        return ast_binop(tok->punct, cast_expr(), NULL);
+    else if(is_punct(tok, '*')) {
+        return ast_uop(AST_DEREF, cast_expr());
+    }
+    else if(is_punct(tok, '&')) {
+        return ast_uop(AST_ADDR, cast_expr());
+    }
+    else if(is_punct(tok, '+') || is_punct(tok, '-') ||is_punct(tok, '~') ||is_punct(tok, '!'))  {
+        error("");
+        return ast_uop(tok->punct, cast_expr());
     }
     
     unget_token(tok);
@@ -323,7 +518,10 @@ static Ast *postfix_expr()
     token *tok = read_token();
 
     if(is_punct(tok, '[')) {
-        ;
+        Ast *r = expr();    
+        expect(']');
+        ast = ast_binop('+', ast, r);
+        return  ast_uop(AST_DEREF, ast);
     }
     if(is_punct(tok, PUNCT_INC) || is_punct(tok, PUNCT_DEC)) {
         return ast_binop(tok->punct, ast, NULL);
@@ -363,7 +561,7 @@ static Ast *primary_expr()
     if(tok->type == Num) {
         Ast *ast = new_ast();
         ast->type = AST_LITERAL;
-        ast->ctype = ctype_int;
+        //ast->ctype = ctype_int;
         ast->ival = atoi(tok->sval);
         return ast;
     }
@@ -411,11 +609,21 @@ static Ast *ident_or_func(char *id)
         return ast;
     }
     ast->type = AST_LVAR;
-    ast->ctype = ctype_int;
+    //ast->ctype = ctype_int;
+    //ast->ctype = NULL;
     ast->varname = id;
     return ast;
 }
 
+static Ast *ast_uop(int type, Ast *u)
+{
+    Ast *ast = new_ast();
+
+    ast->type = type;
+    ast->operand = u;
+
+    return ast;
+}
 static Ast *ast_binop(int punct, Ast *left, Ast *right)
 {
     Ast *ast = new_ast();
@@ -512,9 +720,20 @@ static int is_type_keyword(token *tok)
 {
     return !!get_ctype(tok);
 }
-
+#if 0
 static Ast *decl()
 {
+    token *tok   = read_token();
+    Ctype *ctype = get_ctype(tok);
+    if(ctype == NULL) error("next token is type specifier\n");
+    ctype = declarator(ctype);
+    token *name  = read_token();
+    if(name->type != Id) error("next token is not Id\n");
+    Ast *var = ast_var(ctype, name->sval, AST_LVAR);
+
+    return decl_init(var);
+    
+    /*
     token *tok   = read_token();
     Ctype *ctype = get_ctype(tok);
     token *name  = read_token();
@@ -522,8 +741,9 @@ static Ast *decl()
     Ast *var = ast_var(ctype, name->sval, AST_LVAR);
 
     return decl_init(var);
+    */
 }
-
+#endif
 static Ast *decl_or_stmt()
 {
     token *tok = peek_token();
@@ -597,6 +817,7 @@ static Ast *decl_init(Ast *var)
         expect(';');
         return ast_decl(var, init);
     }
+    fprintf(stderr, "%c\n", tok->ch);
     error("next is ',' or ';' or '='!");
 }
 

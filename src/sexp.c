@@ -26,6 +26,20 @@ static const char *getype(int type)
             return "struct";
     }
 }
+
+static void dectype(Ctype *ctype)
+{
+    if(ctype->type == CTYPE_ARRAY)
+        printf("([] ");
+    else if(ctype->type == CTYPE_PTR)
+        printf("(* ");
+    else
+        printf("(%s ", getype(ctype->type));
+    if(ctype->ptr != NULL) {
+        dectype(ctype->ptr);
+    }
+}
+
 void p_ast(Ast *ast)
 {
     if(!ast)
@@ -83,7 +97,35 @@ void p_ast(Ast *ast)
         printf("))");
     }
     if(ast->type == AST_GVAR || ast->type == AST_LVAR) {
-        printf("(%s %s) ", getype(ast->ctype->type), ast->varname);
+        int i = 0;
+        Ctype *t = ast->ctype;
+        if(t != NULL) {
+            printf("(");
+            for(i = 0; t != NULL ; i++, t = t->ptr) {
+                if(t->type == CTYPE_ARRAY) {
+                    printf("([%d]", t->len);
+                }
+                else if(t->type == CTYPE_PTR)
+                    printf("(*");
+                else
+                    printf("(%s",getype(t->type));
+            }
+            while(i--)
+                printf(")");
+            printf("%s)", ast->varname);
+        }
+        else 
+            printf(" %s ", ast->varname);
+    }
+    if(ast->type == AST_DEREF) {
+        printf("(*");
+        p_ast(ast->operand);
+        printf(")");
+    }
+    if(ast->type == AST_ADDR) {
+        printf("(&");
+        p_ast(ast->operand);
+        printf(")");
     }
     if(ast->type == AST_IF) {
         printf("(AST_IF ");

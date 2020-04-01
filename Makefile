@@ -4,6 +4,8 @@ PAR = parser
 OBJ = lex.o $(PAR).o
 ASM = asm.c lex.c $(PAR).c
 SEXP = sexp.c lex.c $(PAR).c
+
+
 CC = gcc
 
 CFLAGS = 
@@ -27,7 +29,7 @@ asm: $(OBJ) $(OUTDIR)/asm.o
 sexp: $(OBJ) $(OUTDIR)/sexp.o
 	@echo "    CC      "$(TARGET)
 	@$(CC) $(CFLAGS) $^ -o $(TARGET)
-	
+
 $(OUTDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(dir $@)
 	@echo "    CC      "$@
