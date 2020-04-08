@@ -2,7 +2,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include "asm.h"
+#include "symbol.h"
 #include "c0.h"
 
 #define CR(STR, NUM) do{int _n = printf("%s", STR); for(int i = _n; i < NUM; i++) printf(" ");}while(0);

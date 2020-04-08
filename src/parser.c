@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <setjmp.h>
+#include "symbol.h"
 #include "c0.h"
 #define expect(STR) pfexpect(STR, __LINE__)
 
+static struct sym_obj *dctype = NULL;
 static Ctype *ctype_int = &(Ctype){CTYPE_INT, 2, NULL};
 static Ctype *ctype_long = &(Ctype){CTYPE_LONG, 4, NULL};
 static Ctype *ctype_char = &(Ctype){CTYPE_CHAR, 1, NULL};
@@ -40,7 +43,6 @@ static Ast *func_def(Ctype *, char *);
 static Ast *compound_stmt();
 static Ast *stmt();
 static Ast *decl_or_stmt();
-static Ast *decl();
 static Ast *ast_compound_stmt(List *);
 static Ast *ast_var(Ctype *, char *, int);
 static Ast *decl_init(Ast *);
@@ -70,6 +72,7 @@ static int is_assig_opt(token *);
 
 //decl
 static Ast *declaration();
+static Ast *decl();
 static void declarator(List *list);
 static Ctype *pointer(Ctype *ctype);
 
@@ -113,13 +116,17 @@ static Ast *decl()
     token *tok = read_token();
     List *list = make_list();
     Ctype *ctype = get_ctype(tok);
+    char *s = malloc(sizeof(char) * 100);
+    if(dctype == NULL)
+        dctype = sym_init();
 
     if(ctype == NULL) error("next token is type specifier\n");
     declarator(list);
     ctype = create_ctype(list, ctype);
 
     Ast *var = ast_var(ctype, gname, AST_LVAR);
-    
+    dctype->add(dctype, &(struct symbol){.name = strcpy(s, gname), .type = *ctype});
+     
     return decl_init(var);
 }
 
@@ -624,15 +631,80 @@ static Ast *ast_uop(int type, Ast *u)
 
     return ast;
 }
+
+static Ctype *result_type(int op, Ctype *a, Ctype *a)
+{
+    if (b->type == CTYPE_PTR) {
+        if (op == '=')
+            return a;
+        if (op != '+' && op != '-')
+            goto err;
+        if (!is_inttype(a))
+            goto err;
+        return b;
+    }
+    switch (a->type) {
+    case CTYPE_VOID:
+        goto err;
+    case CTYPE_CHAR:
+    case CTYPE_INT:
+        switch (b->type) {
+        case CTYPE_CHAR:
+        case CTYPE_INT:
+            return ctype_int;
+        case CTYPE_LONG:
+            return ctype_long;
+        case CTYPE_FLOAT:
+        case CTYPE_DOUBLE:
+            return ctype_double;
+        case CTYPE_ARRAY:
+        case CTYPE_PTR:
+            return b;
+        }
+        error("internal error");
+    case CTYPE_LONG:
+        switch (b->type) {
+        case CTYPE_LONG:
+            return ctype_long;
+        case CTYPE_FLOAT:
+        case CTYPE_DOUBLE:
+            return ctype_double;
+        case CTYPE_ARRAY:
+        case CTYPE_PTR:
+            return b;
+        }
+        error("internal error");
+    case CTYPE_FLOAT:
+        if (b->type == CTYPE_FLOAT || b->type == CTYPE_DOUBLE)
+            return ctype_double;
+        goto err;
+    case CTYPE_DOUBLE:
+        if (b->type == CTYPE_DOUBLE)
+            return ctype_double;
+        goto err;
+    case CTYPE_ARRAY:
+        if (b->type != CTYPE_ARRAY)
+            goto err;
+        return result_type_int(jmpbuf, op, a->ptr, b->ptr);
+    default:
+        error("internal error: %s %s", ctype_to_string(a), ctype_to_string(b));
+    }
+err:
+    longjmp(*jmpbuf, 1);
+}
 static Ast *ast_binop(int punct, Ast *left, Ast *right)
 {
     Ast *ast = new_ast();
+    jmp_buf jmpbuf;
 
     ast->type = TTYPE_PUNCT;
     ast->ival = punct;
     ast->left = left;
     ast->right = right;
-
+    if (setjmp(jmpbuf) == 0)
+        ast->ctype = result_type(&jmpbuf, type, left->ctype, right->ctype);
+    else
+        error("r");
     return ast;
 }
 

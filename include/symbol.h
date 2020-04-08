@@ -1,5 +1,5 @@
-#ifndef __ASM_H_
-#define __ASM_H_
+#ifndef __SYMBOL_H_
+#define __SYMBOL_H_
 #include "list.h"
 #include "c0.h"
 #include <stdlib.h>
