@@ -749,9 +749,8 @@ static Ast *ast_binop(int punct, Ast *left, Ast *right)
     fprintf(stderr, "%c %s %s\n", punct, getype(left->ctype->type), getype(right->ctype->type));
     if (setjmp(jmpbuf) == 0)
         ast->ctype = result_type(&jmpbuf, punct, left->ctype, right->ctype);
-    else {
-        error("%c %d", punct, left->type);
-    }
+    else
+        error("%c %s %s", punct, getype(left->ctype->type), getype(right->ctype->type));
     return ast;
 }
 

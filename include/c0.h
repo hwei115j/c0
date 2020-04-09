@@ -1,12 +1,23 @@
 #ifndef __C0_H_
 #define __C0_H_
 #include "list.h"
+#include <stdarg.h>
 
-#define error(STR) pferror(STR, __FILE__, __LINE__)
-static inline void pferror(char *s,char *file, int line)
+#define error(...) pferror(__FILE__, __LINE__, __VA_ARGS__)
+
+static inline void pferror(char *file, int line, char *fmt, ...)
 {
+    fprintf(stderr, "%s:%d: ", file, line);
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    fprintf(stderr, "\n");
+    va_end(args);
+    exit(1);
+/*
     fprintf(stderr, "%s %d:%s error!\n",file, line, s);
     exit(1);
+    */
 }
 
 enum {

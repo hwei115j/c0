@@ -1,7 +1,8 @@
 int main()
 {
-    char a[10] = "aldjf";
-    char b[12][23];
-
-    a[2];
+    int a;
+    int b;
+    a = 10;
+    b = 20;
+    a = a+b;
 }
