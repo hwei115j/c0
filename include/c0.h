@@ -20,6 +20,7 @@ static inline void pferror(char *file, int line, char *fmt, ...)
     */
 }
 
+
 enum {
    Unkonwn = 128,
    TTYPE_PUNCT,
@@ -184,6 +185,49 @@ typedef struct __Ast {
         };
     };
 } Ast;
+
+static char *getype(Ctype *ctype)
+{
+    char *str = malloc(sizeof(char) * 100);
+    char *s = str;
+    while(true) {
+        switch(ctype->type) {
+            case CTYPE_VOID:
+                s += sprintf(s, "void"); 
+                return str;
+            case CTYPE_CHAR:
+                s += sprintf(s, "char"); 
+                return str;
+            case CTYPE_INT:
+                s += sprintf(s, "int");
+                return str;
+            case CTYPE_LONG:
+                s += sprintf(s, "long"); 
+                return str;
+            case CTYPE_FLOAT:
+                s += sprintf(s, "float"); 
+                return str;
+            case CTYPE_DOUBLE:
+                s += sprintf(s, "double"); 
+                return str;
+            case CTYPE_ARRAY:
+                s += sprintf(s, "[%d]", ctype->len); 
+                ctype = ctype->ptr;
+                break;
+            case CTYPE_PTR:
+                s += sprintf(s, "*");
+                ctype = ctype->ptr;
+                break;
+            case CTYPE_STRUCT:
+                s += sprintf(s, "struct"); 
+                return str;
+            default:
+                fprintf(stderr, "zzzz\n");
+                return NULL;
+        }
+    }
+    return NULL;
+}
 
 /* lex.c */
 extern int is_punct(token *tok, int c); /*判斷tok是否是punct且符合c*/

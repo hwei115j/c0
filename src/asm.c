@@ -93,30 +93,6 @@ static void emit(char *fmt, ...)
     printf("\n");
 }
 
-static const char *getype(int type)
-{
-    switch(type) {
-    case CTYPE_VOID:
-        return "void";
-    case CTYPE_CHAR:
-        return "char";
-    case CTYPE_INT:
-        return "int";
-    case CTYPE_LONG:
-        return "long";
-    case CTYPE_FLOAT:
-        return "float";
-    case CTYPE_DOUBLE:
-        return "double";
-    case CTYPE_ARRAY:
-        return "array";
-    case CTYPE_PTR:
-        return "prt";
-    case CTYPE_STRUCT:
-        return "struct";
-    }
-    return NULL;
-}
 static void print_func()
 {
     emit("MCIR, DEC 0");        //將.R2右移.R3個
@@ -329,9 +305,8 @@ static void emit_func_body(Ast *ast)
     switch(ast->type) {
     case AST_COMPOUND_STMT: {
         struct sym_obj *reg = sym_local;
-        sym_local = sym_init();
-        if(reg != NULL)
-            list_copy(sym_local->symbol, reg->symbol);
+        sym_local = sym_local->clone(sym_local);
+
         for (Iter i = list_iter(ast->stmts); !iter_end(i);) {
             Ast *reg = iter_next(&i);
             if(reg->type == TTYPE_PUNCT) {

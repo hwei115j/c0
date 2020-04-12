@@ -6,8 +6,11 @@
 #include "c0.h"
 #define expect(STR) pfexpect(STR, __LINE__)
 
-static struct sym_obj *dctype = NULL;
+static struct sym_obj *gctype = NULL;
+static struct sym_obj *lctype = NULL;
+
 static Ctype *ctype_int = &(Ctype){CTYPE_INT, 2, NULL};
+static Ctype *ctype_void = &(Ctype){CTYPE_VOID, 2, NULL};
 static Ctype *ctype_long = &(Ctype){CTYPE_LONG, 4, NULL};
 static Ctype *ctype_char = &(Ctype){CTYPE_CHAR, 1, NULL};
 static Ctype *ctype_float = &(Ctype){CTYPE_FLOAT, 4, NULL};
@@ -27,11 +30,9 @@ static void pfexpect(char punct, int line)
     if(!tok || !is_punct(tok, punct)) {
         char str[100];
         
-        error("The next token is '%c' (tok = %c) ", punct, tok->punct);
-        /*
+//        error("The next token is '%c' (tok = %c) ", punct, tok->punct);
         sprintf(str, "The next token is '%c' (tok = %c) ", punct, tok->punct);
-        pferror(str,__FILE__, line);
-        */
+        pferror(__FILE__, line, str);
     }
 }
 static Ctype *get_ctype(token *);
@@ -80,6 +81,8 @@ static Ast *decl();
 static void declarator(List *list);
 static Ctype *pointer(Ctype *ctype);
 
+static char *getype(Ctype *);
+
 static int calc()
 {
     token *tok = read_token();
@@ -120,16 +123,16 @@ static Ast *decl()
     token *tok = read_token();
     List *list = make_list();
     Ctype *ctype = get_ctype(tok);
-    char *s = malloc(sizeof(char) * 100);
-    if(dctype == NULL)
-        dctype = sym_init();
 
-    if(ctype == NULL) error("next token is type specifier\n");
+    char *s = malloc(sizeof(char) * 100);
+
+    if(ctype == NULL) 
+        error("next token is type specifier\n");
     declarator(list);
     ctype = create_ctype(list, ctype);
-
+ 
     Ast *var = ast_var(ctype, gname, AST_LVAR);
-    dctype->add(dctype, &(struct symbol){.name = strcpy(s, gname), .type = *ctype});
+    lctype->add(lctype, &(struct symbol){.name = strcpy(s, gname), .type = *ctype});
      
     return decl_init(var);
 }
@@ -180,81 +183,6 @@ static void declarator(List *list)
         list_push(list, I);
     return ;
 }
-#if 0
-static Ctype *declarator(Ctype *ctype)
-{
-    List *list = make_list();
-    ctype = pointer(ctype);
-
-    token *tok = read_token();
-    /*
-    while(is_punct(tok, '*')) {
-        Ctype *r = malloc(sizeof(Ctype));
-        r->type = CTYPE_PTR;
-        r->size = 2;
-        list_push(list, r);
-        tok = read_token();
-    }
-    */
-    if(tok->type == Id) {
-        gname = tok->sval;
-        tok = read_token();
-    }
-    while(is_punct(tok, '(')) {
-        tok = read_token();
-        while(is_punct(tok, '*')) {
-            Ctype *r = malloc(sizeof(Ctype));
-            r->type = CTYPE_PTR;
-            r->size = 2;
-            list_push(list, r);
-            tok = read_token();
-        }
-        if(tok->type == Id)
-            gname = tok->sval;
-        expect(')');
-        tok = read_token();
-    }
-
-    //    error("next token is '(' or Id\n");
-    if(is_punct(tok, '[')) {
-        int n = calc();
-        expect(']');
-        Ctype *r = malloc(sizeof(Ctype));
-        r->type = CTYPE_ARRAY;
-        r->size = 2;
-        r->len = n;
-        r->ptr = ctype;
-        ctype = r;
-        //list_push(list, r);
-    }
-    else if(is_punct(tok, '(')) {
-        //parameter-type-list
-        expect(')');
-    }
-    else 
-        unget_token(tok);
-
-    ctype = create_ctype(list, ctype);
-    
-    return ctype;
-#if 0
-    ctype = pointer(ctype);
-    token *tok = read_token();
-
-    if(tok->type == Id) {
-        unget_token(tok);
-        return ctype;
-    }
-    else if(is_punct(tok, '(')) {
-        ctype = declarator(ctype);
-        expect(')');
-        return ctype;
-    }
-    else
-        error("next token is '(' or Id\n");
-#endif
-}
-#endif
 
 static Ctype *pointer(Ctype *ctype)
 {
@@ -291,9 +219,13 @@ static Ast *expr()
         list_push(exprs, ast);
         tok = read_token();
     }
-
+    Iter i = list_iter(exprs);
+    Ast *r = iter_next(&i);
+    
     unget_token(tok);
     ast = new_ast();
+    ast->ctype = r->ctype;
+    
     ast->type = AST_ASSIGNMENT_EXPR;
     ast->exprs = exprs;
     
@@ -491,8 +423,10 @@ static Ast *cast_expr()
 
 List *statement()
 {
+    gctype = sym_init();
+    gctype->add(gctype, &(struct symbol){.name = "out", .type = *ctype_int});
     List *list = make_list();
-    
+
     while(1) {
         Ast *ast = decl_or_func();
         if(!ast)
@@ -506,7 +440,7 @@ static Ast *unary_expr()
     token *tok = read_token();
 
     if(is_punct(tok, PUNCT_INC) || is_punct(tok, PUNCT_DEC)) {
-        return ast_binop(tok->punct,NULL, unary_expr());
+        return ast_binop(tok->punct, unary_expr(), NULL);
     }
     else if(is_punct(tok, '*')) {
         return ast_uop(AST_DEREF, cast_expr());
@@ -528,16 +462,19 @@ static Ast *postfix_expr()
     Ast *ast = primary_expr();
     token *tok = read_token();
 
-    if(is_punct(tok, '[')) {
-        Ast *r = expr();    
+    while(is_punct(tok, '[')) {
+        Iter i = list_iter(expr()->exprs);
+        Ast *r = iter_next(&i);
         expect(']');
         ast = ast_binop('+', ast, r);
-        return  ast_uop(AST_DEREF, ast);
+        ast = ast_uop(AST_DEREF, ast);
+        tok = read_token();
     }
-    if(is_punct(tok, PUNCT_INC) || is_punct(tok, PUNCT_DEC)) {
-        return ast_binop(tok->punct, ast, NULL);
+    while(is_punct(tok, PUNCT_INC) || is_punct(tok, PUNCT_DEC)) {
+        ast = ast_binop(tok->punct, ast, NULL);
+        tok = read_token();
     }
-    if(is_punct(tok, '(')) {
+    while(is_punct(tok, '(')) {
         List *args = make_list();
 
         while(1) {
@@ -553,7 +490,10 @@ static Ast *postfix_expr()
         }
         expect(')');
         ast->args = args;
-        return ast;
+        tok = read_token();
+    }
+    if(is_punct(tok, PUNCT_INC) || is_punct(tok, PUNCT_DEC)) {
+        return ast_binop(tok->punct, NULL, postfix_expr());
     }
 
     unget_token(tok);
@@ -573,8 +513,8 @@ static Ast *primary_expr()
         Ast *ast = new_ast();
         ast->type = AST_LITERAL;
         ast->ctype = ctype_int;
-        //ast->ctype = ctype_int;
         ast->ival = atoi(tok->sval);
+
         return ast;
     }
     if(tok->type == Str) {
@@ -593,15 +533,19 @@ static Ast *primary_expr()
         return ident_or_func(tok->sval);
     }
     else {
-        error("primary_expr");
+        error("primary_expr %c", tok->ch);
     }
 
 }
 static Ast *ident_or_func(char *id)
 {
     Ast *ast = new_ast();
-    struct symbol *r;
+    struct symbol *r = lctype->read(lctype, id);
 
+    if(r == NULL && (r = gctype->read(gctype, id)) == NULL) {
+        fprintf(stderr, "%p %p\n", r, gctype->read(gctype, id));
+        error("not decl");
+    }
     if(is_punct(peek_token(), '(')) {
         /*
         while(1) {
@@ -617,15 +561,12 @@ static Ast *ident_or_func(char *id)
         }
         expect(')');
         */
+        ast->ctype = &r->type;
         ast->type = AST_FUNCALL;
         ast->fname = id;
         return ast;
     }
-    if(dctype == NULL && (r = dctype->read(dctype, id)) == NULL)
-        error("not decl");
-
     ast->type = AST_LVAR;
-    //ast->ctype = ctype_int;
     ast->ctype = &r->type;
     ast->varname = id;
     return ast;
@@ -636,6 +577,7 @@ static Ast *ast_uop(int type, Ast *u)
     Ast *ast = new_ast();
 
     ast->type = type;
+    ast->ctype = u->ctype;
     ast->operand = u;
 
     return ast;
@@ -647,33 +589,16 @@ static bool is_inttype(Ctype *ctype)
            ctype->type == CTYPE_LONG;
 }
 
-static const char *getype(int type)
-{
-    switch(type) {
-        case CTYPE_VOID:
-            return "void";
-        case CTYPE_CHAR:
-            return "char";
-        case CTYPE_INT:
-            return "int";
-        case CTYPE_LONG:
-            return "long";
-        case CTYPE_FLOAT:
-            return "float";
-        case CTYPE_DOUBLE:
-            return "double";
-        case CTYPE_ARRAY:
-            return "array";
-        case CTYPE_PTR:
-            return "prt";
-        case CTYPE_STRUCT:
-            return "struct";
+#define swap(a, b)         \
+    {                      \
+        typeof(a) tmp = b; \
+        b = a;             \
+        a = tmp;           \
     }
-    return NULL;
-}
-
 static Ctype *result_type(jmp_buf *jmpbuf, int op, Ctype *a, Ctype *b)
 {
+    if (a->type > b->type)
+        swap(a, b);
     if(a == NULL || b == NULL)
         error("ctype is NULL a=%p b=%p\n", a, b);
     if (b->type == CTYPE_PTR) {
@@ -701,7 +626,7 @@ static Ctype *result_type(jmp_buf *jmpbuf, int op, Ctype *a, Ctype *b)
             return ctype_double;
         case CTYPE_ARRAY:
         case CTYPE_PTR:
-            return b;
+            return b->ptr;
         }
         error("internal error");
     case CTYPE_LONG:
@@ -713,7 +638,7 @@ static Ctype *result_type(jmp_buf *jmpbuf, int op, Ctype *a, Ctype *b)
             return ctype_double;
         case CTYPE_ARRAY:
         case CTYPE_PTR:
-            return b;
+            return b->ptr;
         }
         error("internal error");
     case CTYPE_FLOAT:
@@ -729,8 +654,7 @@ static Ctype *result_type(jmp_buf *jmpbuf, int op, Ctype *a, Ctype *b)
             goto err;
         return result_type(jmpbuf, op, a->ptr, b->ptr);
     default:
-        error("");
-        //error("internal error: %s %s", ctype_to_string(a), ctype_to_string(b));
+        error("internal error: %s %s", getype(a), getype(b));
     }
 err:
     longjmp(*jmpbuf, 1);
@@ -746,10 +670,18 @@ static Ast *ast_binop(int punct, Ast *left, Ast *right)
     ast->ival = punct;
     ast->left = left;
     ast->right = right;
-    fprintf(stderr, "%c %s %s\n", punct, getype(left->ctype->type), getype(right->ctype->type));
-    if (setjmp(jmpbuf) == 0)
+
+    if(left == NULL) {
+        ast->ctype = right->ctype;
+        return ast;
+    }
+    if(right == NULL) {
+        ast->ctype = left->ctype;
+        return ast;
+    }
+    if (setjmp(jmpbuf) == 0) {
         ast->ctype = result_type(&jmpbuf, punct, left->ctype, right->ctype);
-    else {
+    } else {
         error("%c %d", punct, left->type);
     }
     return ast;
@@ -758,6 +690,8 @@ static Ast *ast_binop(int punct, Ast *left, Ast *right)
 static Ast *decl_or_func()
 {
     token *tok = read_token();
+    char *s = malloc(sizeof(char) * 100);
+
     if(!tok) 
         return NULL;
     Ctype *ctype = get_ctype(tok);
@@ -766,36 +700,44 @@ static Ast *decl_or_func()
         error("next is not Id");
     tok = peek_token();
     if(is_punct(tok, '=') || is_punct(tok, ';')) {
+        gctype->add(gctype, &(struct symbol){.name = strcpy(s, name->sval), .type = *ctype});
         Ast *var = ast_var(ctype, name->sval, AST_GVAR);
         return decl_init(var);
     }
     if(is_punct(tok, '(')) {
+        gctype->add(gctype, &(struct symbol){.name = strcpy(s, name->sval), .type = *ctype});
         return func_def(ctype, name->sval); 
     }
     expect(';');
+    error("null\n");
     return NULL;
 }
 
 static Ast *func_def(Ctype *ctype, char *name)
 {
-    List *args = make_list();    
+    List *args = make_list();
+    lctype = sym_init();
+
     expect('(');
-    while(1) {
-        token *tok = peek_token();
-        if(is_punct(tok, ','))
-            error("next is not ','!");
-        if(is_punct(tok, ')'))
-            break;
+
+    token *tok = peek_token();
+    while(!is_punct(tok, ')')) {
         list_push(args, decl());
+        tok = peek_token();
     }
+
     expect(')');
     expect('{');
+
     Ast *func = new_ast();
     func->type = AST_FUNC;
     func->ctype = ctype;
     func->fname = name;
     func->args = args;
     func->body = compound_stmt();
+
+    //sym_del(lctype);
+
     return func;
 }
 
@@ -828,6 +770,8 @@ static Ctype *get_ctype(token *tok)
         return ctype_long;
     if (!strcmp(tok->sval, "char"))
         return ctype_char;
+    if (!strcmp(tok->sval, "void"))
+        return ctype_void;
     if (!strcmp(tok->sval, "float"))
         return ctype_float;
     if (!strcmp(tok->sval, "double"))
@@ -925,6 +869,7 @@ static Ast *decl_init(Ast *var)
     token *tok = read_token();
 
     if(is_punct(tok, ',') || is_punct(tok, ';')) {
+        //unget_token(tok);
         return ast_decl(var, NULL);
     }
     if(is_punct(tok, ')')) {

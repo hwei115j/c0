@@ -9,4 +9,5 @@ nasm:
 test:
 	@cd ../ && make test
 clean:
+	@cd ../ && make clean
 	rm -rf c.exe *.stackdump

@@ -1,8 +1,9 @@
+int printf(char *fmt)
+{
+    return fmt[2];
+}
 int main()
 {
-    int a;
-    int b;
-    a = 10;
-    b = 20;
-    a = a+b;
+    char *str = "11111";
+    printf(str);
 }

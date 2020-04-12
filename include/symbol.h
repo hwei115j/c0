@@ -20,8 +20,10 @@ struct sym_obj {
     List *symbol;
     struct symbol *(*read)(struct sym_obj *, char *);
     void (*add)(struct sym_obj *, struct symbol *);
+    struct sym_obj *(*clone)(struct sym_obj *);
 };
 
+static struct sym_obj *sym_clone(struct sym_obj *obj);
 static struct symbol *sym_read(struct sym_obj *obj, char *str)
 {
     if(str == NULL)
@@ -42,17 +44,28 @@ static void sym_add(struct sym_obj *obj, struct symbol *r)
     memcpy(m, r, sizeof(struct symbol));
     list_push(obj->symbol, m);
 }
-struct sym_obj *sym_init()
+
+static struct sym_obj *sym_init()
 {
     struct sym_obj *r = malloc(sizeof(struct sym_obj));
     r->symbol = make_list();
     r->read = sym_read;
     r->add = sym_add;
+    r->clone = sym_clone;
 
     return r;
 }
-void sym_del(struct sym_obj *r)
+
+static void sym_del(struct sym_obj *r)
 {
+    list_free(r->symbol);
     free(r);
+}
+
+static struct sym_obj *sym_clone(struct sym_obj *obj)
+{
+    struct sym_obj *r = sym_init();
+    list_copy(r->symbol, obj->symbol);
+    return r;
 }
 #endif

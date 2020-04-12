@@ -3,30 +3,6 @@
 
 void p_list(List *list);
 
-static const char *getype(int type)
-{
-    switch(type) {
-        case CTYPE_VOID:
-            return "void";
-        case CTYPE_CHAR:
-            return "char";
-        case CTYPE_INT:
-            return "int";
-        case CTYPE_LONG:
-            return "long";
-        case CTYPE_FLOAT:
-            return "float";
-        case CTYPE_DOUBLE:
-            return "double";
-        case CTYPE_ARRAY:
-            return "array";
-        case CTYPE_PTR:
-            return "prt";
-        case CTYPE_STRUCT:
-            return "struct";
-    }
-}
-
 static void dectype(Ctype *ctype)
 {
     if(ctype->type == CTYPE_ARRAY)
@@ -34,7 +10,7 @@ static void dectype(Ctype *ctype)
     else if(ctype->type == CTYPE_PTR)
         printf("(* ");
     else
-        printf("(%s ", getype(ctype->type));
+        printf("(%s ", getype(ctype));
     if(ctype->ptr != NULL) {
         dectype(ctype->ptr);
     }
@@ -45,7 +21,7 @@ void p_ast(Ast *ast)
     if(!ast)
         return ;
     if(ast->type == AST_FUNC) {
-        printf("(AST_FUNC (%s (%s)",ast->fname, getype(ast->ctype->type), ast->ctype->size);
+        printf("(AST_FUNC (%s (%s)",ast->fname, getype(ast->ctype), ast->ctype->size);
         for (Iter i = list_iter(ast->args); !iter_end(i);) {
             Ast *v = iter_next(&i);
             p_ast(v->declvar);
@@ -97,28 +73,10 @@ void p_ast(Ast *ast)
         printf("))");
     }
     if(ast->type == AST_GVAR || ast->type == AST_LVAR) {
-        int i = 0;
-        Ctype *t = ast->ctype;
-        if(t != NULL) {
-            printf("(");
-            for(i = 0; t != NULL ; i++, t = t->ptr) {
-                if(t->type == CTYPE_ARRAY) {
-                    printf("([%d]", t->len);
-                }
-                else if(t->type == CTYPE_PTR)
-                    printf("(*");
-                else
-                    printf("(%s",getype(t->type));
-            }
-            while(i--)
-                printf(")");
-            printf("%s)", ast->varname);
-        }
-        else 
-            printf(" %s ", ast->varname);
+        printf("(%s %s) ",getype(ast->ctype), ast->varname);
     }
     if(ast->type == AST_DEREF) {
-        printf("(*");
+        printf("(deref");
         p_ast(ast->operand);
         printf(")");
     }
