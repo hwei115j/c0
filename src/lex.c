@@ -83,6 +83,22 @@ static token *read_str()
     int ch, i;
 
     for(i = 0; (ch = getchar()) != '"'; i++) {
+        if(ch == '\\') {
+            switch(getchar()) {
+                case 'n':
+                    ch = '\n';
+                    break;
+                case 't':
+                    ch = '\t';
+                    break;
+                case '\\':
+                    ch = '\\';
+                    break;
+                case '\'':
+                    ch = '\\';
+                    break;
+            }
+        }
         lexeme[i] = ch;
         if(ch == EOF)
             error(" \"");

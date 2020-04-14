@@ -34,6 +34,12 @@ int out_num(int n)
     }
     return 0;
 }
+int out_str(char *str)
+{
+    for(int i = 0; str[i]; i++)
+        out(str[i]);
+    return 0;
+}
 int spa(int n)
 {
     out_num(n);
@@ -51,17 +57,31 @@ int fib(int n)
         return 1;
     return fib(n - 1) + fib(n - 2);
 }
+
+int swap(int *a, int *b)
+{
+    int r = *a;
+    *a = *b;
+    *b = r;
+
+    return 0;
+}
 int main()
 {
     int max = 0;
     int i;
     int j; 
+    
+    int a = 10;
+    int b = 20;
+    
+    out_str("hello, world\n\n");
 
-    fib(10);
     //1+2+3+....+100
     for(i = 0; i < 101; i++)
         max = max + i;
     out_num(max);
+    out('\n');
 
     //星星
     for(i = 0; i < 10; i++) {
@@ -69,6 +89,8 @@ int main()
             out('*');
         out('\n');
     }
+    out('\n');
+
     //99乘法表
     int r;
     for(i = 1; i < 10; i++) {
@@ -81,16 +103,27 @@ int main()
         }
         out('\n');
     }
+    out('\n');
 
     //費氏數列
-    out('f');
-    out('i');
-    out('b');
-    out('(');
+    out_str("fib(");
     out_num(23);
-    out(')');
-    out('=');
+    out_str(") = ");
     out_num(fib(23));
     out('\n');
-    //out_num(3452);
+    out('\n');
+
+    out_str("    (a, b) = (");
+    out_num(a);
+    out_str(", ");
+    out_num(b);
+    out_str(")\n");
+
+    swap(&a, &b);
+
+    out_str("swap(a, b) = (");
+    out_num(a);
+    out_str(", ");
+    out_num(b);
+    out_str(")\n");
 }

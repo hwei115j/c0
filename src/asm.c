@@ -310,9 +310,89 @@ static void lda(Ast *ast, int size)
     }
 }
 
+static void emit_var_lda(Ast *ast, int size)
+{
+    switch(ast->type) {
+    case TTYPE_PUNCT: {
+        switch(ast->ival) {
+        case '+': {
+            if(ast->right->ctype->type == CTYPE_PTR) {
+                emit_var_lda(ast->left, csize(NULL));
+                emit_var_lda(ast->right, csize(ast->left->ctype));
+            } else if(ast->left->ctype->type == CTYPE_PTR){
+                emit_var_lda(ast->right, csize(ast->left->ctype));
+                emit_var_lda(ast->left, csize(NULL));
+            }
+            else {
+                emit_var_lda(ast->left, csize(NULL));
+                emit_var_lda(ast->right, csize(NULL));
+            }
+            emit("  BSA POP");
+            emit("  STA R1");
+            emit("  BSA POP");
+            emit("  ADD R1");
+            emit("  BSA PUSH");
+            sp++;
+            
+            break;
+        }
+        case '-': {
+            if(ast->right->ctype->type == CTYPE_PTR) {
+                emit_var_lda(ast->left, csize(NULL));
+                emit_var_lda(ast->right, csize(ast->left->ctype));
+            } else if(ast->left->ctype->type == CTYPE_PTR){
+                emit_var_lda(ast->right, csize(ast->left->ctype));
+                emit_var_lda(ast->left, csize(NULL));
+            }
+            else {
+                emit_var_lda(ast->left, csize(NULL));
+                emit_var_lda(ast->right, csize(NULL));
+            }
+            emit("  BSA POP");
+            emit("  CMA");
+            emit("  INC");
+            emit("  STA R1");
+            emit("  BSA POP");
+            emit("  ADD R1");
+            emit("  BSA PUSH");
+            sp++;
+
+            break;
+        }
+        }
+        break;
+    }
+    case AST_LVAR: {
+        struct symbol *r;
+        if((r = sym_local->read(sym_local, ast->varname)) != NULL) {
+            emit("  LDA BP");
+            emit("  ADD %s", push_const(r->offset, NULL));
+            emit("  STA R0");
+            emit("  BSA PUSH");
+            sp--;
+        } else
+            error("");
+        break;
+    }
+    case AST_DEREF: {
+        emit_var_lda(ast->operand, csize(NULL));
+        emit("  BSA POP");
+        emit("  LDA R0 I");
+        emit("  STA R0");
+        emit("  BSA PUSH");
+        break;
+    }
+    case AST_LITERAL: {
+        emit("  LDA %s", push_const(ast->ival * size, NULL));
+        emit("  BSA PUSH");
+        sp--;
+        break;
+    }
+    }
+}
 static void emit_func_body(Ast *ast)
 {
-    if(ast == NULL)
+     if(ast == NULL)
         return ;
     switch(ast->type) {
     case AST_COMPOUND_STMT: {
@@ -352,17 +432,24 @@ static void emit_func_body(Ast *ast)
                     emit("  STA R0");
                     emit("  BSA POP");
                     emit("  STA R0 I");
-                     sp++;
+                    sp++;
                 } else if((r = sym_global->read(sym_global, ast->left->varname)) != NULL) {
                     emit("  BSA POP");
                     emit("  STA %s", r->name);
                     sp++;
                 } else
-                     error("error");
+                      error("error");
+            } else if(ast->left->type == AST_DEREF) {
+                emit_var_lda(ast->left, csize(NULL));
+                emit("  BSA POP");
+                emit("  STA R0");
+                emit("  BSA POP");
+                emit("  STA R0 I");
+                sp++;
             } else {
                 error("error %d %d", ast->left->type , ast->left->type == AST_DEREF);
             }
-            break;
+             break;
         }
         case '+':
             if(ast->left != NULL) {
@@ -385,7 +472,7 @@ static void emit_func_body(Ast *ast)
                 sp++;
             } else
                 lda(ast->right, csize(NULL));
-            break;
+            break; 
         case '-':
             if(ast->left != NULL) {
                 if(ast->right->ctype->type == CTYPE_PTR) {
@@ -616,7 +703,7 @@ static void emit_func_body(Ast *ast)
             break;
         }
         }
-        break;
+         break;
     }
     case AST_LITERAL: {
         emit("  LDA %s", push_const(ast->ival, ast->ctype));
@@ -717,7 +804,7 @@ static void emit_func_body(Ast *ast)
         emit("  STA R0");
         emit("  LDA R0 I");
         emit("  BSA PUSH");
-        break;
+         break;
     }
     case AST_IF: {
         int r = rc;
@@ -773,7 +860,7 @@ static void emit_func_body(Ast *ast)
     }
     case AST_STRUCT_REF:
         break;
-    }
+     }
 }
 static void p_ast(Ast *v)
 {
@@ -816,7 +903,7 @@ static void p_list(List *list)
         Ast *v = iter_next(&i);
         p_ast(v);
     }
-    emit("  ORG 1000");
+    emit("  ORG 2000");
     print_func();
     print_global();
     emit("  END");
