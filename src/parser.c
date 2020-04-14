@@ -6,15 +6,16 @@
 #include "c0.h"
 #define expect(STR) pfexpect(STR, __LINE__)
 
-static struct sym_obj *gctype = NULL;
-static struct sym_obj *lctype = NULL;
-
 static Ctype *ctype_int = &(Ctype){CTYPE_INT, 2, NULL};
 static Ctype *ctype_void = &(Ctype){CTYPE_VOID, 2, NULL};
 static Ctype *ctype_long = &(Ctype){CTYPE_LONG, 4, NULL};
 static Ctype *ctype_char = &(Ctype){CTYPE_CHAR, 1, NULL};
 static Ctype *ctype_float = &(Ctype){CTYPE_FLOAT, 4, NULL};
 static Ctype *ctype_double = &(Ctype){CTYPE_DOUBLE, 8, NULL};
+
+static struct sym_obj *gctype = NULL;
+static struct sym_obj *lctype = NULL;
+
 static char *gname;
 
 static Ast *new_ast()

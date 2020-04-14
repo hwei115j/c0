@@ -58,7 +58,9 @@ static struct sym_obj *sym_init()
 
 static void sym_del(struct sym_obj *r)
 {
-    list_free(r->symbol);
+    if(r == NULL)
+        return ;
+    list_node_free(r->symbol);
     free(r);
 }
 

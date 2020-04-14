@@ -229,6 +229,7 @@ static char *getype(Ctype *ctype)
     return NULL;
 }
 
+
 /* lex.c */
 extern int is_punct(token *tok, int c); /*判斷tok是否是punct且符合c*/
 extern void unget_token(token *tok);    /*將tok還回去*/

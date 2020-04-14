@@ -1,9 +1,34 @@
-int printf(char *fmt)
+/*
+int div(int a, int b)
 {
-    return fmt[2];
+    int sum = 0;
+
+    while(a > b) {
+        sum++;
+        a = a - b;
+    }
+    if(a == b)
+        sum++;
+    return sum;
 }
+int out_num(int n)
+{
+    int max;
+    int r;
+    int f = 0;
+
+    for(max = 10000; max; max = div(max, 10)) {
+        r = div(n, max);
+        n = n - (r * max);
+        if(r > 0)
+            f = 1;
+        if(f)
+            out(r + 48);
+    }
+    return 0;
+}
+*/
 int main()
 {
-    char *str = "11111";
-    printf(str);
+    out('0' + (8 - 2));
 }

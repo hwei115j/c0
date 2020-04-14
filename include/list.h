@@ -121,6 +121,15 @@ static inline void list_free(List *list)
     }
 }
 
+static inline void list_node_free(List *list)
+{
+    for (Iter i = list_iter(list); !iter_end(i);) {
+        ListNode *now = i.ptr;
+        i.ptr = now->next;
+        free(now);
+    }
+}
+
 static inline void list_copy(List *out, List *in)
 {
     for (Iter i = list_iter(in); !iter_end(i);) {
