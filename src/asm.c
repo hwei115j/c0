@@ -260,13 +260,15 @@ static void emit_func_start(Ast *v)
     int lsp = 0;
     for (Iter i = list_iter(v->args); !iter_end(i);) {
         Ast *a = iter_next(&i);
-        emit_func_body(a);
-        emit("  LDA BP");
-        emit("  ADD %s", push_const(lsp--, NULL));
-        emit("  STA R1");
-        emit("  LDA %s", push_const(count++, NULL));
-        emit("  BSA OSET");
-        emit("  STA R1 I");
+        if(a->type != PUNCT_VLA) {
+            emit_func_body(a);
+            emit("  LDA BP");
+            emit("  ADD %s", push_const(lsp--, NULL));
+            emit("  STA R1");
+            emit("  LDA %s", push_const(count++, NULL));
+            emit("  BSA OSET");
+            emit("  STA R1 I");
+        }
     }
 }
 static void emit_func_end(void)
@@ -838,7 +840,7 @@ static void emit_func_body(Ast *ast)
         emit("  STA R0");
         emit("  LDA R0 I");
         emit("  BSA PUSH");
-         break;
+        break;
     }
     case AST_IF: {
         int r = rc;

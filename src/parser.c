@@ -81,8 +81,10 @@ static Ast *declaration();
 static Ast *decl();
 static void declarator(List *list);
 static Ctype *pointer(Ctype *ctype);
-
 static char *getype(Ctype *);
+//struct
+static Ctype *read_struct();
+static Ctype *read_union();
 
 static int calc()
 {
@@ -119,12 +121,23 @@ static Ctype *create_ctype(List *list, Ctype *ctype)
     return ctype;
 }
 
+static Ctype *is_struct(token *tok)
+{
+    if (!strcmp(tok->sval, "struct"))
+        return read_struct();
+    if (!strcmp(tok->sval, "union"))
+        return read_union();
+    return NULL;
+}
+
 static Ast *decl()
 {
     token *tok = read_token();
     List *list = make_list();
-    Ctype *ctype = get_ctype(tok);
-
+    Ctype *ctype = is_struct(tok);
+//        get_ctype(tok);
+    fprintf(stderr, "%s %p\n",tok->sval, ctype);
+    ctype = ctype?ctype:get_ctype(tok);
     char *s = malloc(sizeof(char) * 100);
 
     if(ctype == NULL) 
@@ -544,7 +557,7 @@ static Ast *ident_or_func(char *id)
     struct symbol *r = lctype->read(lctype, id);
 
     if(r == NULL && (r = gctype->read(gctype, id)) == NULL) {
-        fprintf(stderr, "%p %p\n", r, gctype->read(gctype, id));
+        //fprintf(stderr, "%p %p\n", r, gctype->read(gctype, id));
         error("not decl");
     }
     if(is_punct(peek_token(), '(')) {
@@ -590,16 +603,11 @@ static bool is_inttype(Ctype *ctype)
            ctype->type == CTYPE_LONG;
 }
 
-#define swap(a, b)         \
-    {                      \
-        typeof(a) tmp = b; \
-        b = a;             \
-        a = tmp;           \
-    }
 static Ctype *result_type(jmp_buf *jmpbuf, int op, Ctype *a, Ctype *b)
 {
-    if (a->type > b->type)
+    if (a->type > b->type) {
         swap(a, b);
+    }
     if(a == NULL || b == NULL)
         error("ctype is NULL a=%p b=%p\n", a, b);
     if (b->type == CTYPE_PTR) {
@@ -725,6 +733,12 @@ static Ast *func_def(Ctype *ctype, char *name)
     while(!is_punct(tok, ')')) {
         list_push(args, decl());
         tok = peek_token();
+        if(is_punct(tok, PUNCT_VLA)) {
+            //不定引數 '...'
+            list_push(args, ast_var(NULL, NULL, PUNCT_VLA));
+            tok = read_token();
+            tok = peek_token();
+        }
     }
 
     expect(')');
@@ -758,7 +772,38 @@ static Ast *compound_stmt()
     }
     return ast_compound_stmt(list);
 }
+static Ctype *read_union()
+{
+    return read_struct();
+}
 
+static Ctype *read_struct()
+{
+    token *tok = read_token();
+    Ctype *ctype = malloc(sizeof(Ctype));
+    ctype->type = CTYPE_STRUCT;
+    ctype->dict = dict_init();
+
+    if(tok->type == Id) {
+        //fprintf(stderr, "%s %s\n", tok->sval, peek_token()->sval);
+        expect('{');
+        //tok = read_token();
+        struct sym_obj *r = lctype;
+        lctype = sym_init();
+        while(!is_punct(tok, '}')) {
+            Ast *at = decl()->declvar;
+            dict_add(ctype->dict, at->varname, at->ctype, sizeof(*at->ctype));
+            tok = peek_token();
+        }
+        expect('}');
+        lctype = r;
+    } else if(is_punct(tok, '{')){
+        expect('}');
+    } else 
+        error("struct error");
+
+    return ctype;       
+}
 static Ctype *get_ctype(token *tok)
 {
     if (!tok)
@@ -777,6 +822,10 @@ static Ctype *get_ctype(token *tok)
         return ctype_float;
     if (!strcmp(tok->sval, "double"))
         return ctype_double;
+    if (!strcmp(tok->sval, "struct"))
+        return (void*)1;
+    if (!strcmp(tok->sval, "union"))
+        return (void*)1;
     return NULL;
 }
 

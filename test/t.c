@@ -35,9 +35,7 @@ int main()
     int i = 0;
     for(i = 0; i < 5; i++)
         a[i] = 10 * (i + 1);
-    int *b;
-    b = a;
-    out_num(*a);
+    out_num(a);
     /*
     for(i = 0; i < 5; i++) {
         out_num(b[i]);

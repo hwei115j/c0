@@ -1,9 +1,17 @@
 #ifndef __C0_H_
 #define __C0_H_
-#include "list.h"
 #include <stdarg.h>
+#include "dict.h"
+#include "list.h"
 
 #define error(...) pferror(__FILE__, __LINE__, __VA_ARGS__)
+
+#define swap(a, b)         \
+    {                      \
+        typeof(a) tmp = b; \
+        b = a;             \
+        a = tmp;           \
+    }
 
 static inline void pferror(char *file, int line, char *fmt, ...)
 {
@@ -14,10 +22,6 @@ static inline void pferror(char *file, int line, char *fmt, ...)
     fprintf(stderr, "\n");
     va_end(args);
     exit(1);
-/*
-    fprintf(stderr, "%s %d:%s error!\n",file, line, s);
-    exit(1);
-    */
 }
 
 
@@ -59,7 +63,8 @@ enum {
     PUNCT_CIL,
     PUNCT_NE,
     PUNCT_GE,
-    PUNCT_LE
+    PUNCT_LE,
+    PUNCT_VLA
 };
 
 enum {
@@ -80,6 +85,8 @@ typedef struct __Ctype {
     struct __Ctype *ptr; /* pointer or array */
     int len;             /* array length */
     /* struct */
+    int offset;
+    struct dict *dict;
 } Ctype;
 
 typedef struct {

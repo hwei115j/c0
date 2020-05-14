@@ -30,6 +30,9 @@ void p_ast(Ast *ast)
         p_ast(ast->body);
         printf(")");
     }
+    if(ast->type == PUNCT_VLA) {        
+        printf("VLA ");
+    }
     if(ast->type == AST_COMPOUND_STMT) {
 //        printf("(AST_COMPOUND_STMT");
         p_list(ast->stmts);

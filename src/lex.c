@@ -13,6 +13,17 @@ static token *read_punct(int punct)
     int ch;
     int reg = 0;
 
+    if(punct == '.' && (ch = getchar()) == '.') {
+        if(getchar() == '.') {
+            punct = PUNCT_VLA;
+        }
+        else {
+            error("lex err not ...");
+        }
+    }
+    else if(punct == '.')
+        ungetc(ch, stdin);
+
     switch(punct) {
         case '=':
             reg = PUNCT_EQ;
@@ -30,6 +41,7 @@ static token *read_punct(int punct)
             reg = PUNCT_DEC;
             break;
     }
+
     if((ch = getchar()) == punct && reg)
         punct = reg;
     else
@@ -197,6 +209,7 @@ static token *gettoken()
                 return read_num(ch);
             }
         }
+        case '.':
         case '+':
         case '\\':
         case '!':

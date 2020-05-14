@@ -2,7 +2,7 @@ TARGET = c
 
 PAR = parser
 OBJ = lex.o $(PAR).o
-ASM = asm.c lex.c $(PAR).c
+ASM = nasm.c lex.c $(PAR).c
 SEXP = sexp.c lex.c $(PAR).c
 
 
@@ -22,7 +22,7 @@ all: $(OBJ) $(OUTDIR)/main.o
 	@echo "    CC      "$(TARGET)
 	@$(CC) $(CFLAGS) $^ -o $(TARGET)
 
-asm: $(OBJ) $(OUTDIR)/asm.o
+asm: $(OBJ) $(OUTDIR)/nasm.o
 	@echo "    CC      "$(TARGET)
 	@$(CC) $(CFLAGS) $^ -o $(TARGET)
 
