@@ -40,12 +40,21 @@ static token *read_punct(int punct)
         case '-':
             reg = PUNCT_DEC;
             break;
+        case '&':
+            reg = PUNCT_LOGAND;
+            break;
+        case '|':
+            reg = PUNCT_LOGOR;
+            break;
     }
 
     if((ch = getchar()) == punct && reg)
         punct = reg;
-    else
+    else if(punct == '-' && ch == '>')
+        punct = PUNCT_ARROW;
+    else 
         ungetc(ch, stdin);
+
     token *r = malloc(sizeof(token));
     r->type = TTYPE_PUNCT;
     r->punct = punct;

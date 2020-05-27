@@ -58,5 +58,8 @@ static struct dict *dict_clone(struct dict *obj)
     list_copy(r->dict, obj->dict);
     return r;
 }
+static void dict_for()
+{
+}
 
 #endif

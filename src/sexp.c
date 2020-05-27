@@ -16,6 +16,25 @@ static void dectype(Ctype *ctype)
     }
 }
 
+static char *getstruct(Ctype *ctype)
+{
+    char *str = malloc(sizeof(char) * 100);
+    char *s = str;
+
+    s+= sprintf(s, "(");
+    if(ctype->type == CTYPE_STRUCT) {
+        s += sprintf(s, "struct");
+        for (Iter i = list_iter(ctype->dict->dict); !iter_end(i);) {
+            struct __dict *r = iter_next(&i);
+            s+= sprintf(s, "%s", getstruct(r->data));
+        }
+    }
+    else 
+       s+= sprintf(s, "%s", getype(ctype));
+    s+= sprintf(s, ")");
+
+    return str;
+}
 void p_ast(Ast *ast)
 {
     if(!ast)
@@ -61,6 +80,12 @@ void p_ast(Ast *ast)
             case PUNCT_EQ:
                 printf("(== ");
                 break;
+            case PUNCT_LOGAND:
+                printf("(&& ");
+                break;
+            case PUNCT_LOGOR:
+                printf("(|| ");
+                break;
             default:
                 printf("(%c ", ast->ival);
                 break ;
@@ -76,7 +101,8 @@ void p_ast(Ast *ast)
         printf("))");
     }
     if(ast->type == AST_GVAR || ast->type == AST_LVAR) {
-        printf("(%s %s) ",getype(ast->ctype), ast->varname);
+        printf("(%s %s)", getstruct(ast->ctype), ast->varname);
+        //printf("(%s %s)",getype(ast->ctype), ast->varname);
     }
     if(ast->type == AST_DEREF) {
         printf("(deref");

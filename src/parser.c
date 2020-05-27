@@ -15,8 +15,24 @@ static Ctype *ctype_double = &(Ctype){CTYPE_DOUBLE, 8, NULL};
 
 static struct sym_obj *gctype = NULL;
 static struct sym_obj *lctype = NULL;
+static struct dict *struct_sym = NULL;
 
 static char *gname;
+
+static struct sym_obj *to_symbol(struct dict *struct_sym)
+{
+    struct sym_obj *sym = sym_init();
+    
+    for (Iter i = list_iter(struct_sym->dict); !iter_end(i);) {
+        struct __dict *r = iter_next(&i);
+        struct symbol *a = malloc(sizeof(struct symbol));
+        a->name = r->name;
+        a->type = *((Ctype *)r->data);
+        sym->add(sym, a);
+    }
+
+    return sym;
+}
 
 static Ast *new_ast()
 {
@@ -135,8 +151,6 @@ static Ast *decl()
     token *tok = read_token();
     List *list = make_list();
     Ctype *ctype = is_struct(tok);
-//        get_ctype(tok);
-    fprintf(stderr, "%s %p\n",tok->sval, ctype);
     ctype = ctype?ctype:get_ctype(tok);
     char *s = malloc(sizeof(char) * 100);
 
@@ -474,43 +488,76 @@ static Ast *unary_expr()
 static Ast *postfix_expr()
 {
     Ast *ast = primary_expr();
-    token *tok = read_token();
+    token *tok;
+    char id[100];
+    char *s = id;
+    int flag = 0;
 
-    while(is_punct(tok, '[')) {
-        Iter i = list_iter(expr()->exprs);
-        Ast *r = iter_next(&i);
-        expect(']');
-        ast = ast_binop('+', ast, r);
-        ast = ast_uop(AST_DEREF, ast);
+    while(1) {
         tok = read_token();
-    }
-    while(is_punct(tok, PUNCT_INC) || is_punct(tok, PUNCT_DEC)) {
-        ast = ast_binop(tok->punct, ast, NULL);
-        tok = read_token();
-    }
-    while(is_punct(tok, '(')) {
-        List *args = make_list();
-
-        while(1) {
-            list_push(args, assignment_expr());
-            tok = peek_token();
-            if(is_punct(tok, ','))
-                expect(',');
-            else if(is_punct(tok, ')'))
-                break;
-            else {
-                error("next is ',' or ')'!");
-            }
+    
+        if(is_punct(tok, PUNCT_ARROW))
+            fprintf(stderr, "ARROW\n");
+        if(is_punct(tok, '[')) {
+            Iter i = list_iter(expr()->exprs);
+            Ast *r = iter_next(&i);
+            expect(']');
+            ast = ast_binop('+', ast, r);
+            ast = ast_uop(AST_DEREF, ast);
         }
-        expect(')');
-        ast->args = args;
-        tok = read_token();
-    }
-    if(is_punct(tok, PUNCT_INC) || is_punct(tok, PUNCT_DEC)) {
-        return ast_binop(tok->punct, NULL, postfix_expr());
-    }
+        else if(is_punct(tok, PUNCT_INC) || is_punct(tok, PUNCT_DEC)) {
+            ast = ast_binop(tok->punct, ast, NULL);
+        }
+        else if(is_punct(tok, '(')) {
+            List *args = make_list();
 
-    unget_token(tok);
+            while(1) {
+                list_push(args, assignment_expr());
+                tok = peek_token();
+                if(is_punct(tok, ','))
+                    expect(',');
+                else if(is_punct(tok, ')'))
+                    break;
+                else {
+                    error("next is ',' or ')'!");
+                }
+            }
+            expect(')');
+            ast->args = args;
+        }
+        else if(is_punct(tok, '.')) {
+            tok = read_token();
+            if(tok->type == Id) {
+                struct sym_obj *r = lctype; 
+                
+                if(!flag) {
+                    s += sprintf(s, "%s", struct_name);
+                    flag = 0;
+                }
+                s += sprintf(s, ".%s", tok->sval);
+                ast = ident_or_func(id);
+
+                //lctype = to_symbol(struct_sym);
+                //ast = ast_binop('.', ast, ident_or_func(tok->sval));
+                //ast = ident_or_func(tok->sval);
+                //lctype = r;
+            }
+            else
+                error("error next is not ID");
+            
+        }
+        else if(is_punct(tok, PUNCT_ARROW)) {
+            tok = read_token();
+            if(tok->type == Id) {
+            
+            }
+            error("->");
+        }
+        else {
+            unget_token(tok);
+            break;
+        }
+    }
     return ast;
 }
 
@@ -546,9 +593,8 @@ static Ast *primary_expr()
     else if(tok->type == Id) {
         return ident_or_func(tok->sval);
     }
-    else {
-        error("primary_expr %c", tok->ch);
-    }
+    unget_token(tok);
+    return NULL;
 
 }
 static Ast *ident_or_func(char *id)
@@ -556,33 +602,35 @@ static Ast *ident_or_func(char *id)
     Ast *ast = new_ast();
     struct symbol *r = lctype->read(lctype, id);
 
+    if(strchr(id, '.')) {
+        char name[100];
+        char *tok;
+        strcpy(name, id);
+        tok = strtok(name, ".");
+        r = lctype->read(lctype, id);
+        struct sym_obj *lr = to_symbol(r->type.dict);
+   
+        lctype = to_symbol(struct_sym);
+        while(tok) {
+        }
+    }
     if(r == NULL && (r = gctype->read(gctype, id)) == NULL) {
-        //fprintf(stderr, "%p %p\n", r, gctype->read(gctype, id));
         error("not decl");
     }
     if(is_punct(peek_token(), '(')) {
-        /*
-        while(1) {
-            list_push(args, expr());
-            tok = peek_token();
-            if(is_punct(tok, ','))
-                expect(',');
-            else if(is_punct(tok, ')'))
-                break;
-            else {
-                error("next is ',' or ')'!");
-            }
-        }
-        expect(')');
-        */
         ast->ctype = &r->type;
         ast->type = AST_FUNCALL;
         ast->fname = id;
         return ast;
     }
+    if(r->type.type == CTYPE_STRUCT) {
+        struct_sym = r->type.dict;
+        struct_name = r->name;
+    }
     ast->type = AST_LVAR;
     ast->ctype = &r->type;
     ast->varname = id;
+
     return ast;
 }
 
@@ -680,11 +728,11 @@ static Ast *ast_binop(int punct, Ast *left, Ast *right)
     ast->left = left;
     ast->right = right;
 
-    if(left == NULL) {
+    if(left == NULL || left->ctype->type == CTYPE_STRUCT) {
         ast->ctype = right->ctype;
         return ast;
     }
-    if(right == NULL) {
+    if(right == NULL || right->ctype->type == CTYPE_STRUCT) {
         ast->ctype = left->ctype;
         return ast;
     }
@@ -785,9 +833,7 @@ static Ctype *read_struct()
     ctype->dict = dict_init();
 
     if(tok->type == Id) {
-        //fprintf(stderr, "%s %s\n", tok->sval, peek_token()->sval);
         expect('{');
-        //tok = read_token();
         struct sym_obj *r = lctype;
         lctype = sym_init();
         while(!is_punct(tok, '}')) {

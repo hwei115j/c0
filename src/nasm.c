@@ -602,6 +602,38 @@ static void emit_func_body(Ast *ast)
                  error("err >");
             break;
         }
+        case PUNCT_LOGAND: {
+            int r = rc;
+            rc += 2;
+
+            lda_rvalue(ast->left, csize(NULL));
+            emit("  BSA .POP");
+            emit("  SPA");
+            emit("  BUN .L%d", r);
+            lda_rvalue(ast->right, csize(NULL));
+            emit("  BUN .L%d", r+1);
+            emit(".L%d,  NOP", r);
+            emit("  LDA  %s", push_const(0, NULL));
+            emit("  BSA .PUSH");
+            emit(".L%d,  NOP", r+1);
+            break;
+        }
+        case PUNCT_LOGOR: {
+            int r = rc;
+            rc += 2;
+
+            lda_rvalue(ast->left, csize(NULL));
+            emit("  BSA .POP");
+            emit("  SZA");
+            emit("  BUN .L%d", r);
+            lda_rvalue(ast->right, csize(NULL));
+            emit("  BUN .L%d", r+1);
+            emit(".L%d,  NOP", r);
+            emit("  LDA  %s", push_const(1, NULL));
+            emit("  BSA .PUSH");
+            emit(".L%d,  NOP", r+1);
+            break;
+        }
     }
     break;
     case AST_LITERAL:

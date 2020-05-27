@@ -26,7 +26,7 @@ static inline void pferror(char *file, int line, char *fmt, ...)
 
 
 enum {
-   Unkonwn = 128,
+   Unkonwn = 256,
    TTYPE_PUNCT,
    Num, End, Id, Str,
    Addsub, Muldiv, Assign, Lparen, Rparen, Dq, Comma, Slash, Bslash, Lbraces, Rbraces, Semicolon,
@@ -34,7 +34,7 @@ enum {
 };
 
 enum {
-    AST_LITERAL = 256,
+    AST_LITERAL = 512,
     AST_STRING,
     AST_LVAR,
     AST_GVAR,
