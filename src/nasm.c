@@ -30,12 +30,15 @@ static int csize(Ctype *ctype)
         return 1;
 }
 
-static int get_array_size(Ctype *ctype)
+static int get_size(Ctype *ctype)
 {
     if(ctype->type == CTYPE_ARRAY)
-        return ctype->len * get_array_size(ctype->ptr);
+        return ctype->len * get_size(ctype->ptr);
+    else if(ctype->type == CTYPE_STRUCT)
+        return ctype->offset;
     return ctype->size;
 }
+
 static char *mkstr(char *fmt, ...)
 {
     va_list args;
@@ -323,6 +326,10 @@ static void lda_rvalue(Ast *ast, int size)
     switch(ast->type) {
     case AST_LVAR: {
         struct symbol *r;
+        if(ast->ctype->type == CTYPE_STRUCT) {
+            error("");
+        }
+
         if((r = sym_local->read(sym_local, ast->varname)) != NULL) {
             if(r != NULL && r->type.type == CTYPE_ARRAY) {
                 emit("  LDA .BP");
@@ -345,7 +352,7 @@ static void lda_rvalue(Ast *ast, int size)
             emit("  LDA %s", r->name);
             emit("  BSA .PUSH");
         } else
-            error("error");
+            error("error %s", ast->varname);
         break;
     }
     case AST_LITERAL: {
@@ -405,6 +412,25 @@ static void lda_rvalue(Ast *ast, int size)
     }
 }
 
+
+static void struct_add_symbol(struct symbol *sym)
+{
+    struct symbol o;
+    struct symbol *r = &o;
+    int lsp = sp;
+
+    for (Iter i = list_iter(sym->type.dict->dict); !iter_end(i);) {
+        struct __dict *dict = iter_next(&i);
+        fprintf(stderr, "%s\n", dict->name);
+        r->name = dict->name;
+        r->type = *(Ctype *)dict->data;
+        r->offset = lsp;
+        sym_local->add(sym_local, r);
+        if(r->type.type == CTYPE_STRUCT)
+            struct_add_symbol(r);
+        lsp += get_size(&r->type);
+    }
+}
 
 static void emit_func_body(Ast *ast)
 {
@@ -659,14 +685,17 @@ static void emit_func_body(Ast *ast)
         r->name = ast->declvar->varname;
         r->type = *ast->declvar->ctype;
         r->offset = sp;
-
-        if(ast->declvar->ctype->type == CTYPE_ARRAY) {
-            emit("  LDA %s", push_const(get_array_size(ast->declvar->ctype), NULL));
+        /*
+        if(ast->declvar->ctype->type == CTYPE_STRUCT)
+            struct_add_symbol(r);
+        */
+        if(ast->declvar->ctype->type == CTYPE_ARRAY || ast->declvar->ctype->type == CTYPE_STRUCT) {
+            emit("  LDA %s", push_const(get_size(ast->declvar->ctype), NULL));
             emit("  CMA");
             emit("  INC");
             emit("  ADD .SP");
             emit("  STA .SP");
-            sp -= atoi(push_const(get_array_size(ast->declvar->ctype), NULL));
+            sp -= atoi(push_const(get_size(ast->declvar->ctype), NULL));
             r->offset = sp + 1;
         } else if(ast->declinit == NULL) {
             emit("  CLA");

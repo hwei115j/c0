@@ -1,53 +1,30 @@
                 BSA     main             
                 BSA     .CALL            
                 HLT                      
-func,           DEC     0                
-                BSA     .GETF            
-                BUN     func            I
-                CLA                      
-                BSA     .PUSH            
-                LDA     .BP              
-                ADD     0                
-                STA     .R1              
-                LDA     3                
-                BSA     .OSET            
-                STA     .R1             I
-                LDA     .BP              
-                ADD     0                
-                STA     .R0              
-                LDA     .R0             I
-                BSA     .PUSH            
-                BSA     .POP             
-                BSA     .RET             
-                CMA                      
-                BSA     .RET             
 main,           DEC     0                
                 BSA     .GETF            
                 BUN     main            I
-                LDA     51               
+                LDA     3                
+                CMA                      
+                INC                      
+                ADD     .SP              
+                STA     .SP              
+                LDA     .BP              
+                ADD     -2               
                 BSA     .PUSH            
                 LDA     .BP              
-                ADD     0                
+                ADD     -2               
                 BSA     .PUSH            
-                BSA     func             
-                BSA     .CALL            
+                LDA     1                
+                BSA     .PUSH            
+                BSA     .POP             
                 STA     .R1              
-                LDA     .SP              
-                ADD     1                
-                STA     .SP              
-                LDA     .R1              
+                BSA     .POP             
+                ADD     .R1              
                 BSA     .PUSH            
                 BSA     .POP             
                 STA     .R0              
                 LDA     .R0             I
-                BSA     .PUSH            
-                BSA     out              
-                BSA     .CALL            
-                STA     .R1              
-                LDA     .SP              
-                ADD     1                
-                STA     .SP              
-                LDA     .R1              
                 BSA     .PUSH            
                 CMA                      
                 BSA     .RET             
@@ -148,8 +125,7 @@ in,             DEC     0
 .R4,            DEC     0                
 .N1,            DEC     -1               
 .N2,            DEC     -2               
-0,              DEC     0                
 3,              DEC     3                
-51,             DEC     51               
+-2,             DEC     -2               
 1,              DEC     1                
                 END                      

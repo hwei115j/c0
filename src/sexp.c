@@ -23,7 +23,7 @@ static char *getstruct(Ctype *ctype)
 
     s+= sprintf(s, "(");
     if(ctype->type == CTYPE_STRUCT) {
-        s += sprintf(s, "struct");
+        s += sprintf(s, "struct %d", ctype->offset);
         for (Iter i = list_iter(ctype->dict->dict); !iter_end(i);) {
             struct __dict *r = iter_next(&i);
             s+= sprintf(s, "%s", getstruct(r->data));

@@ -1,11 +1,12 @@
 int main()
 {
     struct t {
-        struct t2{
-            char x;
+        struct t1{
+            int x;
             int y;
-        } a;
+        }*c;
+        int a;
         int b;
     }t;
-    t.a;
+    t.c;
 }
