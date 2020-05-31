@@ -14,7 +14,7 @@ struct symbol {
         char *str;
         void *ptr;
     };
-    struct symbol *struct_symbol;
+//    struct symbol *struct_symbol;
     Ctype type;                
 };
 

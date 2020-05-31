@@ -193,6 +193,26 @@ typedef struct __Ast {
     };
 } Ast;
 
+static char *getype(Ctype *);
+static char *getstruct(Ctype *ctype)
+{
+    char *str = malloc(sizeof(char) * 100);
+    char *s = str;
+
+    s+= sprintf(s, "(");
+    if(ctype->type == CTYPE_STRUCT) {
+        s += sprintf(s, "struct %d", ctype->offset);
+        for (Iter i = list_iter(ctype->dict->dict); !iter_end(i);) {
+            struct __dict *r = iter_next(&i);
+            s+= sprintf(s, "%s", getstruct(r->data));
+        }
+    }
+    else 
+       s+= sprintf(s, "%s", getype(ctype));
+    s+= sprintf(s, ")");
+
+    return str;
+}
 static char *getype(Ctype *ctype)
 {
     char *str = malloc(sizeof(char) * 100);
@@ -226,7 +246,7 @@ static char *getype(Ctype *ctype)
                 ctype = ctype->ptr;
                 break;
             case CTYPE_STRUCT:
-                s += sprintf(s, "struct"); 
+                s += sprintf(s, "%s", getstruct(ctype)); 
                 return str;
             default:
                 fprintf(stderr, "zzzz\n");

@@ -15,7 +15,7 @@ static void dectype(Ctype *ctype)
         dectype(ctype->ptr);
     }
 }
-
+/*
 static char *getstruct(Ctype *ctype)
 {
     char *str = malloc(sizeof(char) * 100);
@@ -35,6 +35,7 @@ static char *getstruct(Ctype *ctype)
 
     return str;
 }
+*/
 void p_ast(Ast *ast)
 {
     if(!ast)

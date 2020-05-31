@@ -91,6 +91,7 @@ static Ast *multiplicative_expr();
 static Ast *cast_expr();
 static Ast *postfix_expr();
 static Ast *primary_expr();
+static Ast *unary_expr();
 static int is_assig_opt(token *);
 
 //decl
@@ -174,7 +175,7 @@ static void declarator(List *list)
     while(is_punct(tok, '*')) {
         Ctype *r = malloc(sizeof(Ctype));
         r->type = CTYPE_PTR;
-        r->size = 2;
+        r->size = 1;
         list_push(l, r);
         tok = read_token();
     }
@@ -220,7 +221,7 @@ static Ctype *pointer(Ctype *ctype)
     while(is_punct(tok, '*')) {
         Ctype *r = malloc(sizeof(Ctype));
         r->type = CTYPE_PTR;
-        r->size = 2;
+        r->size = 1;
         r->ptr = ctype;
         ctype = r;
         tok = read_token();
@@ -541,7 +542,7 @@ static Ast *postfix_expr()
                 lctype = r;
             }
             else
-                error("error next is not ID");
+                error("error next is not ID %c", tok->ch);
             
         }
         else if(is_punct(tok, PUNCT_ARROW)) {
@@ -625,6 +626,10 @@ static Ast *ident_or_func(char *id)
     }
     if(r->type.type == CTYPE_STRUCT) {
         struct_sym = r->type.dict;
+        struct_name = r->name;
+    }
+    if(r->type.type == CTYPE_PTR && r->type.ptr->type == CTYPE_STRUCT) {
+        struct_sym = r->type.ptr->dict;
         struct_name = r->name;
     }
     ast->type = AST_LVAR;
@@ -833,6 +838,23 @@ static int get_size(Ctype *ctype)
     return ctype->size;
 }
 
+static Ast *s_decl()
+{
+    token *tok = read_token();
+    List *list = make_list();
+    Ctype *ctype = is_struct(tok);
+    ctype = ctype?ctype:get_ctype(tok);
+    char *s = malloc(sizeof(char) * 100);
+
+    if(ctype == NULL) 
+        error("next token is type specifier\n");
+    declarator(list);
+    ctype = create_ctype(list, ctype);
+ 
+    Ast *var = ast_var(ctype, gname, AST_LVAR);
+     
+    return decl_init(var);
+}
 static Ctype *read_struct()
 {
     token *tok = read_token();
@@ -847,7 +869,9 @@ static Ctype *read_struct()
 
         lctype = sym_init();
         while(!is_punct(tok, '}')) {
-            Ast *at = decl()->declvar;
+            Ast *at = s_decl()->declvar;
+            at->ctype->offset = ctype->offset;
+            //fprintf(stderr, "p: %d\n", at->ctype->offset);
             dict_add(ctype->dict, at->varname, at->ctype, sizeof(*at->ctype));
             tok = peek_token();
             ctype->offset += get_size(at->ctype);

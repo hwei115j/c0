@@ -9,22 +9,35 @@ main,           DEC     0
                 INC                      
                 ADD     .SP              
                 STA     .SP              
-                LDA     .BP              
-                ADD     -2               
+                LDA     116              
                 BSA     .PUSH            
                 LDA     .BP              
-                ADD     -2               
-                BSA     .PUSH            
-                LDA     1                
-                BSA     .PUSH            
-                BSA     .POP             
-                STA     .R1              
-                BSA     .POP             
-                ADD     .R1              
+                ADD     1                
                 BSA     .PUSH            
                 BSA     .POP             
                 STA     .R0              
                 LDA     .R0             I
+                BSA     .PUSH            
+                BSA     .POP             
+                STA     .R0              
+                BSA     .POP             
+                STA     .R0             I
+                LDA     .BP              
+                ADD     1                
+                STA     .R0              
+                LDA     .R0             I
+                BSA     .PUSH            
+                BSA     .POP             
+                STA     .R0              
+                LDA     .R0             I
+                BSA     .PUSH            
+                BSA     out              
+                BSA     .CALL            
+                STA     .R1              
+                LDA     .SP              
+                ADD     1                
+                STA     .SP              
+                LDA     .R1              
                 BSA     .PUSH            
                 CMA                      
                 BSA     .RET             
@@ -126,6 +139,6 @@ in,             DEC     0
 .N1,            DEC     -1               
 .N2,            DEC     -2               
 3,              DEC     3                
--2,             DEC     -2               
+116,            DEC     116              
 1,              DEC     1                
                 END                      

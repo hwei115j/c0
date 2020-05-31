@@ -11,6 +11,7 @@ struct sym_obj *sym_local;
 static int sp;
 static int rc;
 
+static struct symbol *struct_par(Ast *ast);
 static int csize(Ctype *ctype)
 {
     if(ctype == NULL)
@@ -296,6 +297,9 @@ static void lda_lvalue(Ast *ast)
     switch(ast->type) {
     case AST_LVAR: {
         struct symbol *r = sym_local->read(sym_local, ast->varname);
+        if(strchr(ast->varname, '.')) {
+            r = struct_par(ast);
+        }
         emit("  LDA .BP");
         emit("  ADD %s", push_const(r->offset, NULL));
         emit("  BSA .PUSH");
@@ -321,16 +325,86 @@ static void lda_lvalue(Ast *ast)
     }
 }
 
+static struct sym_obj *to_symbol(struct dict *struct_sym)
+{
+    struct sym_obj *sym = sym_init();
+   
+    for (Iter i = list_iter(struct_sym->dict); !iter_end(i);) {
+        struct __dict *r = iter_next(&i);
+        struct symbol *a = malloc(sizeof(struct symbol));
+        a->name = r->name;
+        a->type = *((Ctype *)r->data);
+        sym->add(sym, a);
+    }
+
+    return sym;
+}
+
+static char *struct_next(char *name,int *len, int *flag)
+{
+    int i;
+
+    if(!*name)
+        return NULL;
+
+    if(name[0] == '.') {
+        *flag = '.';
+        *name++;
+    }
+    else if(name[0] == '-' && name[1] == '>') {
+        *flag = PUNCT_ARROW;
+        *name++;
+    }
+
+    for(*len = 0; name[*len] != '.' && name[*len] != '-' && name[*len] != '\0'; (*len)++);
+
+    return &name[*len];
+}
+
+static struct symbol *struct_par(Ast *ast)
+{
+    int flag, len = 0, i;
+    char str[100];
+    char *s = ast->varname;
+    s = struct_next(s, &len ,&flag);
+
+    for(i = 0; i < len; i++)
+        str[i] = s[i-len];
+    str[i] = '\0';
+
+    struct symbol *r = sym_local->read(sym_local, str);
+    struct sym_obj *l = to_symbol(r->type.dict);
+
+
+    while(s = struct_next(s, &len, &flag)) {
+        for(i = 0; i < len; i++)
+            str[i] = s[i-len];
+        str[i] = '\0';
+        if(flag == '.') {
+            if(r->type.type == CTYPE_STRUCT)
+                l = to_symbol(r->type.dict);
+            r = l->read(l, str);
+            r->offset = r->type.offset;
+        } else if(flag == PUNCT_ARROW) {
+        }
+        else {
+            error("");
+        }
+    }
+
+    //fprintf(stderr, "n: %s, t: %d, o: %d\n", r->name, r->type.type, r->type.offset);
+    return r;
+}
 static void lda_rvalue(Ast *ast, int size)
 {
     switch(ast->type) {
     case AST_LVAR: {
-        struct symbol *r;
-        if(ast->ctype->type == CTYPE_STRUCT) {
-            error("");
-        }
+        struct symbol *r = NULL;
 
-        if((r = sym_local->read(sym_local, ast->varname)) != NULL) {
+        if(strchr(ast->varname, '.')) {
+            r = struct_par(ast);
+        }
+        if(r || (r = sym_local->read(sym_local, ast->varname)) != NULL) {
             if(r != NULL && r->type.type == CTYPE_ARRAY) {
                 emit("  LDA .BP");
                 emit("  ADD %s", push_const(r->offset, NULL));
@@ -399,6 +473,18 @@ static void lda_rvalue(Ast *ast, int size)
             emit("  LDA .R0 I");
             emit("  BSA .PUSH");
         }
+        break;
+    }
+    case AST_ADDR: {
+        struct symbol *r = sym_local->read(sym_local, ast->operand->varname);
+
+        if(strchr(ast->operand->varname, '.')) {
+            r = struct_par(ast->operand);
+        }
+        fprintf(stderr, "%p\n", r);
+        emit("  LDA .BP");
+        emit("  ADD %s", push_const(r->offset, NULL));
+        emit("  BSA .PUSH");
         break;
     }
     case TTYPE_PUNCT:
@@ -685,10 +771,10 @@ static void emit_func_body(Ast *ast)
         r->name = ast->declvar->varname;
         r->type = *ast->declvar->ctype;
         r->offset = sp;
-        /*
-        if(ast->declvar->ctype->type == CTYPE_STRUCT)
-            struct_add_symbol(r);
-        */
+        if(ast->declvar->ctype->type == CTYPE_STRUCT) {
+        //    struct_add_symbol(r);
+        }
+
         if(ast->declvar->ctype->type == CTYPE_ARRAY || ast->declvar->ctype->type == CTYPE_STRUCT) {
             emit("  LDA %s", push_const(get_size(ast->declvar->ctype), NULL));
             emit("  CMA");
