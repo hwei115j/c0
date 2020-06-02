@@ -11,6 +11,11 @@ int div(int a, int b)
     return sum;
 }
 
+int printf(char *fmt, ...)
+{
+}
+
+
 int out_num(int n)
 {
 

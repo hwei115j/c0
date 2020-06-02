@@ -455,6 +455,8 @@ List *statement()
 {
     gctype = sym_init();
     gctype->add(gctype, &(struct symbol){.name = "out", .type = *ctype_int});
+    gctype->add(gctype, &(struct symbol){.name = "in", .type = *ctype_int});
+    gctype->add(gctype, &(struct symbol){.name = "va_start", .type = *ctype_int});
     List *list = make_list();
 
     while(1) {
@@ -855,6 +857,7 @@ static Ast *s_decl()
      
     return decl_init(var);
 }
+
 static Ctype *read_struct()
 {
     token *tok = read_token();
@@ -995,6 +998,35 @@ static Ast *ast_var(Ctype *ctype, char *sval, int AST)
     r->varname = sval;
     return r;
 }
+static Ast *initializer_list()
+{
+    Ast *init = new_ast();
+    token *tok = read_token();
+    init->type = AST_ARRAY_INIT;
+    init->arrayinit = make_list();
+  
+    if(is_punct(tok, '{')) 
+        list_push(init->arrayinit, initializer_list());
+    else {
+        unget_token(tok);
+        list_push(init->arrayinit, assignment_expr());
+    }
+    tok = read_token();
+    while(is_punct(tok, ',')) {
+        if(is_punct(peek_token(), '{')) {
+            expect('{');
+            list_push(init->arrayinit, initializer_list());
+        }
+        else
+            list_push(init->arrayinit, assignment_expr());
+        tok = read_token();
+    }
+
+    unget_token(tok);
+    expect('}');
+
+    return init;
+}
 static Ast *decl_init(Ast *var)
 {
     token *tok = read_token();
@@ -1008,8 +1040,16 @@ static Ast *decl_init(Ast *var)
         return ast_decl(var, NULL);
     }
     if(is_punct(tok, '=')) {
-        Ast *init = expr();
+        Ast *init = NULL;
+        if(is_punct(tok = read_token(), '{')) {
+            init = initializer_list();
+        }
+        else {
+            unget_token(tok);
+            init = assignment_expr();
+        }
         expect(';');
+
         return ast_decl(var, init);
     }
     error("next is ',' or ';' or '='!");

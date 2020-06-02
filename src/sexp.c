@@ -158,6 +158,14 @@ void p_ast(Ast *ast)
         p_ast(ast->whilebody);
         printf("))");
     }
+    if(ast->type == AST_ARRAY_INIT) {
+        printf("(");
+        for (Iter i = list_iter(ast->arrayinit); !iter_end(i);) {
+            Ast *v = iter_next(&i);
+            p_ast(v);
+        }
+        printf(")");
+    }
     if(ast->type == AST_ASSIGNMENT_EXPR) {
         for (Iter i = list_iter(ast->exprs); !iter_end(i);) {
             Ast *v = iter_next(&i);

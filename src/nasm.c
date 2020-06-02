@@ -147,7 +147,7 @@ static void print_func()
     emit("._L2, ISZ .R3");
     emit("      BUN ._L3");
     emit("      BUN MCIL I");
-
+    
     emit("out,  DEC 0");        //func out()
     emit("      BSA .GETF");
     emit("      BUN out I");
@@ -160,6 +160,16 @@ static void print_func()
     emit("      BSA .GETF");
     emit("      BUN in I");
     emit("      INP");
+    emit("      BSA .RET");
+
+    emit("va_start, DEC 0");    //func va_start()
+    emit("      BSA .GETF");
+    emit("      BUN va_start I");
+    emit("      LDA .BP");
+    emit("      ADD 3");
+    emit("      STA .R0");
+    emit("      LDA .R0 I");
+    emit("      ADD 4");
     emit("      BSA .RET");
 
     emit(".OSET,  DEC 0");      //AC <- mem[.BP+AC]
@@ -274,12 +284,14 @@ static void emit_func_start(Ast *v)
     for (Iter i = list_iter(v->args); !iter_end(i);) {
         Ast *a = iter_next(&i);
         emit_func_body(a);
-        emit("  LDA .BP");
-        emit("  ADD %s", push_const(lsp--, NULL));
-        emit("  STA .R1");
-        emit("  LDA %s", push_const(count++, NULL));
-        emit("  BSA .OSET");
-        emit("  STA .R1 I");
+        if(a->type != PUNCT_VLA) {
+            emit("  LDA .BP");
+            emit("  ADD %s", push_const(lsp--, NULL));
+            emit("  STA .R1");
+            emit("  LDA %s", push_const(count++, NULL));
+            emit("  BSA .OSET");
+            emit("  STA .R1 I");
+        }
     }
 }
 
@@ -401,15 +413,12 @@ static void lda_rvalue(Ast *ast, int size)
     case AST_LVAR: {
         struct symbol *r = NULL;
 
-        if(strchr(ast->varname, '.')) {
-            r = struct_par(ast);
-        }
-        if(r || (r = sym_local->read(sym_local, ast->varname)) != NULL) {
-            if(r != NULL && r->type.type == CTYPE_ARRAY) {
+        if((r = sym_local->read(sym_local, ast->varname)) != NULL) {
+            if(r->type.type == CTYPE_ARRAY) {
                 emit("  LDA .BP");
                 emit("  ADD %s", push_const(r->offset, NULL));
                 emit("  BSA .PUSH");
-            } else if(r != NULL && r->type.type == CTYPE_PTR) {
+            } else if(r->type.type == CTYPE_PTR) {
                 emit("  LDA .BP");
                 emit("  ADD %s", push_const(r->offset, NULL));
                 emit("  STA .R0");
@@ -418,8 +427,17 @@ static void lda_rvalue(Ast *ast, int size)
             } else {
                 emit("  LDA %s", push_const(r->offset, NULL));
                 emit("  BSA .OSET");
-                if(size > 1)
-                    emit("  ADD %s", push_const(size, NULL));
+                if(size > 1) {
+                    emit("        STA .R2");
+                    emit("        LDA %s", push_const(size, NULL));
+                    emit("        STA .R3");
+                    emit("        CLA");
+                    emit("        STA .R1");
+                    emit("        LDA %s", push_const(-8, NULL));
+                    emit("        STA .R4");
+                    emit("        BSA .MUL");
+                    emit("        LDA .R1");
+                }
                 emit("  BSA .PUSH");
             }
         } else if((r = sym_global->read(sym_global, ast->varname)) != NULL) {
@@ -476,15 +494,15 @@ static void lda_rvalue(Ast *ast, int size)
         break;
     }
     case AST_ADDR: {
-        struct symbol *r = sym_local->read(sym_local, ast->operand->varname);
-
-        if(strchr(ast->operand->varname, '.')) {
-            r = struct_par(ast->operand);
+        if(ast->operand->type == AST_DEREF) {
+            lda_rvalue(ast->operand->operand, csize(NULL));
         }
-        fprintf(stderr, "%p\n", r);
-        emit("  LDA .BP");
-        emit("  ADD %s", push_const(r->offset, NULL));
-        emit("  BSA .PUSH");
+        else {
+            struct symbol *r = sym_local->read(sym_local, ast->operand->varname);
+            emit("  LDA .BP");
+            emit("  ADD %s", push_const(r->offset, NULL));
+            emit("  BSA .PUSH");
+        }
         break;
     }
     case TTYPE_PUNCT:
@@ -518,6 +536,28 @@ static void struct_add_symbol(struct symbol *sym)
     }
 }
 
+
+static List *make_array_list(List *in, int max)
+{
+    List *out = make_list();
+
+    for (Iter i = list_iter(in);!iter_end(i);) {
+        Ast *v = iter_next(&i);
+        if(v->type == AST_ARRAY_INIT) {
+            List *r = make_array_list(v->arrayinit, max);
+
+            for(Iter i = list_iter(r); !iter_end(i);)
+                list_push(out, iter_next(&i));
+        }
+        else 
+            list_push(out, v);
+    }
+    int n = list_len(out);
+    while(n-- > max+1)
+        list_pop(out);
+
+    return out;
+}
 static void emit_func_body(Ast *ast)
 {
     if(ast == NULL)
@@ -776,20 +816,36 @@ static void emit_func_body(Ast *ast)
         }
 
         if(ast->declvar->ctype->type == CTYPE_ARRAY || ast->declvar->ctype->type == CTYPE_STRUCT) {
-            emit("  LDA %s", push_const(get_size(ast->declvar->ctype), NULL));
-            emit("  CMA");
-            emit("  INC");
-            emit("  ADD .SP");
-            emit("  STA .SP");
             sp -= atoi(push_const(get_size(ast->declvar->ctype), NULL));
             r->offset = sp + 1;
+            if(ast->declinit == NULL) {
+                emit("  LDA %s", push_const(get_size(ast->declvar->ctype), NULL));
+                emit("  CMA");
+                emit("  INC");
+                emit("  ADD .SP");
+                emit("  STA .SP");
+            } else {
+                if(ast->declvar->ctype->type == CTYPE_ARRAY) {
+                    List *r_list = make_array_list(ast->declinit->arrayinit, -r->offset);        
+                    int count = 0;
+                    for (Iter i = list_iter(list_reverse(r_list));!iter_end(i); count++) {
+                        Ast *v = iter_next(&i);
+                        emit_func_body(v);
+                    }
+                    for(int i = count; i < -r->offset; i++) {
+                        emit("  CLA");
+                        emit("  BSA .PUSH");
+                    }
+                }
+                sp = r->offset-1;
+            }
         } else if(ast->declinit == NULL) {
             emit("  CLA");
             emit("  BSA .PUSH");
         } else {
             if(ast->declinit->type == AST_FUNCALL) {
                 emit_func_body(ast->declinit);
-                emit(" BSA .PUSH");
+                //emit(" BSA .PUSH");
             } else if(ast->declinit->type == AST_DEREF) {
                 emit_func_body(ast->declinit);
                 //lda_rvalue(ast->declinit, 1);
@@ -806,9 +862,12 @@ static void emit_func_body(Ast *ast)
         break;
     }
     case AST_ADDR: {
+        lda_rvalue(ast, csize(NULL));
+        /*
         emit("  LDA .BP");
         emit("  ADD %s", push_const(sym_local->read(sym_local, ast->operand->varname)->offset, NULL));
         emit("  BSA .PUSH");
+        */
         break;
     }
     case AST_DEREF: {
@@ -868,7 +927,6 @@ static void emit_func_body(Ast *ast)
     case AST_STRUCT_REF:
         break;
     case PUNCT_VLA: {
-
         break;
     }
     }
