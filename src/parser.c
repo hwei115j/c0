@@ -413,7 +413,8 @@ static Ast *additive_expr()
     token *tok = read_token();
 
     while(is_punct(tok, '+') || is_punct(tok, '-')) {
-        ast = ast_binop(tok->punct, ast, multiplicative_expr());
+        Ast *r = multiplicative_expr();
+        ast = ast_binop(tok->punct, ast, r);
         tok = read_token();
     }
 
@@ -480,7 +481,10 @@ static Ast *unary_expr()
     else if(is_punct(tok, '&')) {
         return ast_uop(AST_ADDR, cast_expr());
     }
-    else if(is_punct(tok, '+') || is_punct(tok, '-') ||is_punct(tok, '~') ||is_punct(tok, '!'))  {
+    else if(is_punct(tok, '!')) {
+        return ast_uop(tok->punct, cast_expr());
+    }
+    else if(is_punct(tok, '+') || is_punct(tok, '-') ||is_punct(tok, '~'))  {
         error("");
         return ast_uop(tok->punct, cast_expr());
     }
@@ -618,7 +622,7 @@ static Ast *ident_or_func(char *id)
     }
 
     if(r == NULL && (r = gctype->read(gctype, id)) == NULL) {
-        error("not decl");
+        error("not decl %s", id);
     }
     if(is_punct(peek_token(), '(')) {
         ast->ctype = &r->type;
@@ -646,8 +650,13 @@ static Ast *ast_uop(int type, Ast *u)
     Ast *ast = new_ast();
 
     ast->type = type;
-    ast->ctype = u->ctype;
     ast->operand = u;
+    /*
+    if(type == AST_DEREF && u->ctype->type == CTYPE_PTR || u->ctype->type == CTYPE_ARRAY) 
+        ast->ctype = u->ctype->ptr;
+    else
+    */
+    ast->ctype = u->ctype;
 
     return ast;
 }
@@ -668,14 +677,16 @@ static Ctype *result_type(jmp_buf *jmpbuf, int op, Ctype *a, Ctype *b)
     if (b->type == CTYPE_PTR) {
         if (op == '=')
             return a;
+        /*
         if (op != '+' && op != '-')
             goto err;
+            */
         if (!is_inttype(a))
             goto err;
         return b;
     }
     switch (a->type) {
-    case CTYPE_VOID:
+    case CTYPE_VOID:    
         goto err;
     case CTYPE_CHAR:
     case CTYPE_INT:
@@ -714,8 +725,9 @@ static Ctype *result_type(jmp_buf *jmpbuf, int op, Ctype *a, Ctype *b)
             return ctype_double;
         goto err;
     case CTYPE_ARRAY:
-        if (b->type != CTYPE_ARRAY)
+        if (b->type != CTYPE_ARRAY) {
             goto err;
+        }
         return result_type(jmpbuf, op, a->ptr, b->ptr);
     default:
         error("internal error: %s %s", getype(a), getype(b));
@@ -746,6 +758,7 @@ static Ast *ast_binop(int punct, Ast *left, Ast *right)
     if (setjmp(jmpbuf) == 0) {
         ast->ctype = result_type(&jmpbuf, punct, left->ctype, right->ctype);
     } else {
+        fprintf(stderr, "err: %d %d\n", left->ctype->type, right->ctype->type);
         error("%c %d", punct, left->type);
     }
     return ast;

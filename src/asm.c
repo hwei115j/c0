@@ -763,8 +763,10 @@ static void emit_func_body(Ast *ast)
     case AST_FUNCALL: {
         List *r = list_reverse(ast->args);
         int count = 0;
+        fprintf(stderr, "aaa\n");
         for (Iter i = list_iter(r); !iter_end(i); count++) {
             Ast *v = iter_next(&i);
+            fprintf(stderr, "aaa %p", v);
             emit_func_body(v);
             /*
             if(v != NULL && v->type == AST_FUNCALL)

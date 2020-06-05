@@ -96,14 +96,23 @@ int printf(char *fmt, ...)
     return count;
 }
 
+int scanf(*fmt, ...)
+{
+    char *va_list = va_start(&fmt);
+    int p = 0;
+    int count;
+
+}
 int main()
 {
     int i;
     int j;
 
+    /*
     for(i = 0; i < 10; i++) {
         for(j = 0; j < i; j++)
             printf("*");
         printf("\n");
     }
+    */
 }

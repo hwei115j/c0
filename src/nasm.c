@@ -467,9 +467,10 @@ static void lda_rvalue(Ast *ast, int size)
     case AST_FUNCALL: {
         List *r = list_reverse(ast->args);
         int count = 0;
-        for (Iter i = list_iter(r); !iter_end(i); count++) {
+        for (Iter i = list_iter(r); !iter_end(i);) {
             Ast *v = iter_next(&i);
             emit_func_body(v);
+            if(v) count++;
         }
         emit("  BSA %s", ast->fname);
         emit("  BSA .CALL");
@@ -479,7 +480,8 @@ static void lda_rvalue(Ast *ast, int size)
         emit("  STA .SP");
         emit("  LDA .R1");
         emit("  BSA .PUSH");
-        sp = sp+count-1;
+        sp++;
+       // if(count) sp = sp+count-1;
         list_free(r);
         break;
     }
@@ -640,6 +642,7 @@ static void emit_func_body(Ast *ast)
             break;
         }
         case '/':
+            error("no /");
             break;
         case PUNCT_CIR:
         case PUNCT_CIL:
@@ -712,6 +715,33 @@ static void emit_func_body(Ast *ast)
                 emit("  BSA .PUSH");
             } else
                 error("err EQ");
+            break;
+        }
+        case PUNCT_NE: {
+            if(ast->left != NULL && ast->right != NULL) {
+                lda_rvalue(ast->left, csize(NULL));
+                lda_rvalue(ast->right, csize(NULL));
+                emit("  BSA .POP");
+                emit("  STA .R1");
+                emit("  BSA .POP"); 
+                emit("  CMA");
+                emit("  INC");
+                emit("  ADD .R1");
+                emit("  CLE");
+                emit("  SZA");
+                emit("  CME");
+                emit("  CME");
+                emit("  CLA");
+                emit("  CIL");
+                emit("  SPA");
+                emit("  CME");
+                emit("  CME");
+                emit("  CME");
+                emit("  CLA");
+                emit("  CIL");
+                emit("  BSA .PUSH");
+            } else
+                error("err NE");
             break;
         }
         case '!': {
@@ -811,9 +841,6 @@ static void emit_func_body(Ast *ast)
         r->name = ast->declvar->varname;
         r->type = *ast->declvar->ctype;
         r->offset = sp;
-        if(ast->declvar->ctype->type == CTYPE_STRUCT) {
-        //    struct_add_symbol(r);
-        }
 
         if(ast->declvar->ctype->type == CTYPE_ARRAY || ast->declvar->ctype->type == CTYPE_STRUCT) {
             sp -= atoi(push_const(get_size(ast->declvar->ctype), NULL));
@@ -844,12 +871,20 @@ static void emit_func_body(Ast *ast)
             emit("  BSA .PUSH");
         } else {
             if(ast->declinit->type == AST_FUNCALL) {
+                //emit("  BSA .PUSH");
                 emit_func_body(ast->declinit);
                 //emit(" BSA .PUSH");
+                /*
+                emit("  LDA .BP");
+                emit("  ADD %s", push_const(r->offset, NULL));
+                emit("  STA .R0"); 
+                emit("  BSA .POP");
+                emit("  STA .R0 I");
+                */
             } else if(ast->declinit->type == AST_DEREF) {
                 emit_func_body(ast->declinit);
                 //lda_rvalue(ast->declinit, 1);
-                emit("BSA .PUSH");
+                //emit("  BSA .PUSH");
             } else {
                 emit_func_body(ast->declinit);
             }

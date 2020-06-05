@@ -52,6 +52,8 @@ static token *read_punct(int punct)
         punct = reg;
     else if(punct == '-' && ch == '>')
         punct = PUNCT_ARROW;
+    else if(punct == '!' && ch == '=')
+        punct = PUNCT_NE;
     else 
         ungetc(ch, stdin);
 
