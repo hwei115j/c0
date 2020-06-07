@@ -256,8 +256,8 @@ static void emit_data(struct symbol *reg)
 }
 static void print_global()
 {
-    emit(".SP,   DEC 3999");
-    emit(".BP,   DEC 3999");
+    emit(".SP,   DEC 4095");
+    emit(".BP,   DEC 4095");
     emit(".R0,   DEC 0");
     emit(".R1,   DEC 0");
     emit(".R2,   DEC 0");

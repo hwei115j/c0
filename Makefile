@@ -1,4 +1,5 @@
 TARGET = c
+SCGET = sc
 
 PAR = parser
 OBJ = lex.o $(PAR).o
@@ -16,23 +17,30 @@ TESTDIR = test
 
 INCLUDES = $(addprefix -I ,$(INCDIR))
 OBJ := $(patsubst %.o, $(OUTDIR)/%.o, $(OBJ))
-TARGET := $(TESTDIR)/$(TARGET)
+TARGET := $(OUTDIR)/$(TARGET)
+SCGET := $(OUTDIR)/$(SCGET)
 
-all: $(OBJ) $(OUTDIR)/main.o
-	@echo "    CC      "$(TARGET)
-	@$(CC) $(CFLAGS) $^ -o $(TARGET)
+.PHONY:	all
+all: asm sexp
+#all: $(OBJ) $(OUTDIR)/main.o
+#	@echo "    CC      "$(TARGET)
+#	@$(CC) $(CFLAGS) $^ -o $(TARGET)
+#	@cp $(TARGET) $(TESTDIR)/
 
 asm: $(OBJ) $(OUTDIR)/nasm.o
 	@echo "    CC      "$(TARGET)
 	@$(CC) $(CFLAGS) $^ -o $(TARGET)
+	@cp $(TARGET) $(TESTDIR)/
 
 sexp: $(OBJ) $(OUTDIR)/sexp.o
-	@echo "    CC      "$(TARGET)
-	@$(CC) $(CFLAGS) $^ -o $(TARGET)
+	@echo "    CC      "$(SCGET)
+	@$(CC) $(CFLAGS) $^ -o $(SCGET)
+	@cp $(SCGET) $(TESTDIR)/
 
 $(OUTDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(dir $@)
 	@echo "    CC      "$@
 	@$(CC) $(CFLAGS) $< -o $@ -c $(INCLUDES)
+.PHONY: clean
 clean:
-	rm -rf *.exe *.out *.o *.stackdump $(OUTDIR) $(TARGET)
+	rm -rf *.exe *.out *.o *.stackdump $(OUTDIR) $(TARGET) $(SCGET)
