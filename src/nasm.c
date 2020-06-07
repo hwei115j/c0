@@ -555,9 +555,15 @@ static List *make_array_list(List *in, int max)
             list_push(out, v);
     }
     int n = list_len(out);
-    while(n-- > max+1)
-        list_pop(out);
 
+    if(n < max+1) {
+        while(n++ < max+1)
+            list_push(out ,NULL);
+    }
+    else {
+        while(n-- > max+1)
+            list_pop(out);
+    }
     return out;
 }
 static void emit_func_body(Ast *ast)
@@ -855,14 +861,22 @@ static void emit_func_body(Ast *ast)
                 if(ast->declvar->ctype->type == CTYPE_ARRAY) {
                     List *r_list = make_array_list(ast->declinit->arrayinit, -r->offset);        
                     int count = 0;
+
                     for (Iter i = list_iter(list_reverse(r_list));!iter_end(i); count++) {
                         Ast *v = iter_next(&i);
-                        emit_func_body(v);
+                        if(v) 
+                            emit_func_body(v);
+                        else {
+                            emit("  CLA");
+                            emit("  BSA .PUSH");
+                        }
                     }
+                    /*
                     for(int i = count; i < -r->offset; i++) {
                         emit("  CLA");
                         emit("  BSA .PUSH");
                     }
+                    */
                 }
                 sp = r->offset-1;
             }

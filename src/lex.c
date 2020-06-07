@@ -208,6 +208,10 @@ static token *gettoken()
                 ch = '/';
             }
         }
+        case '#': {
+            while((ch = getchar()) != '\n' && ch != EOF);
+            return gettoken();
+        }
         /* 空格在這版的詞法分析很重要
          * 目前沒有能力處理同個符號的多個優先級
          * 例如1 -2會是(1)(-2)

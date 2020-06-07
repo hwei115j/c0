@@ -1,9 +1,7 @@
-/*
-int out(int a)
-{
-    putchar(a);
-}
-*/
+#int out(int a)
+#{
+#    putchar(a);
+#}
 int div(int a, int b)
 {
     int sum = 0;

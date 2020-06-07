@@ -10,7 +10,6 @@ int div(int a, int b)
         sum++;
     return sum;
 }
-
 int printf(char *fmt, ...)
 {
 }
