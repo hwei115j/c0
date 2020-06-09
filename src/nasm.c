@@ -594,7 +594,7 @@ static void emit_func_body(Ast *ast)
         }
         break;
     }
-    case TTYPE_PUNCT:
+    case TTYPE_PUNCT: {
         switch(ast->ival) {
         case '=': {
             lda_rvalue(ast->right, csize(NULL));
@@ -606,8 +606,8 @@ static void emit_func_body(Ast *ast)
             break;
         }
         case '+': {
-            if (ast->left > ast->right)
-                swap(ast->left, ast->left);
+            if (ast->left > ast->right || ast->left->type == AST_STRING)
+                swap(ast->left, ast->right);
             lda_rvalue(ast->left, csize(NULL));
             lda_rvalue(ast->right, csize(ast->left->ctype));
             emit("  BSA .POP");
@@ -618,8 +618,8 @@ static void emit_func_body(Ast *ast)
             break;
         }
         case '-': {
-            if (ast->left > ast->right)
-                swap(ast->left, ast->left);
+            if (ast->left > ast->right || ast->left->type == AST_STRING)
+                swap(ast->left, ast->right);
             lda_rvalue(ast->left, csize(NULL));
             lda_rvalue(ast->right, csize(ast->left->ctype));
             emit("  BSA .POP");
@@ -652,6 +652,56 @@ static void emit_func_body(Ast *ast)
             break;
         case PUNCT_CIR:
         case PUNCT_CIL:
+        case PUNCT_DEC: {
+            struct symbol *r;
+            if(ast->right != NULL) {
+                //++i, --i
+                if(ast->right->type != AST_LVAR && ast->right->type != AST_GVAR)
+                    error("not lvalue");
+                if((r = sym_local->read(sym_local, ast->right->varname)) != NULL) {
+                    emit("  LDA .BP");
+                    emit("  ADD %s", push_const(r->offset, NULL));
+                    emit("  STA .R0");
+                    emit("  LDA .R0 I");
+                    emit("  ADD .N1");
+                    emit("  STA .R0 I");
+                    emit("  LDA .R0 I");
+                    emit("  BSA .PUSH");
+
+                } else if((r = sym_global->read(sym_global, ast->right->varname)) != NULL) {
+                    emit("  LDA %s", r->name);
+                    emit("  ADD .N1");
+                    emit("  STA %s", r->name);
+                    emit("  LDA %s", r->name);
+                    emit("  BSA .PUSH");
+                } else
+                    error("error");
+            } else if(ast->left != NULL) {
+                //i++, i--
+                if(ast->left->type != AST_LVAR && ast->left->type != AST_GVAR)
+                    error("lvar");
+                if((r = sym_local->read(sym_local, ast->left->varname)) != NULL) {
+                    emit("  LDA .BP");
+                    emit("  ADD %s", push_const(r->offset, NULL));
+                    emit("  STA .R0");
+                    emit("  LDA .R0 I");
+                    emit("  BSA .PUSH");
+                    emit("  LDA .R0 I");
+                    emit("  ADD .N1");
+                    emit("  STA .R0 I");
+
+                } else if((r = sym_global->read(sym_global, ast->left->varname)) != NULL) {
+                    emit("  LDA %s", r->name);
+                    emit("  BSA .PUSH");
+                    emit("  LDA %s", r->name);
+                    emit("  ADD .N1");
+                    emit("  STA %s", r->name);
+                } else
+                    error("DEC error");
+            } else
+                error("DEC err");
+            break;
+        }
         case PUNCT_INC: {
             struct symbol *r;
             if(ast->right != NULL) {
@@ -751,18 +801,15 @@ static void emit_func_body(Ast *ast)
             break;
         }
         case '!': {
-            if(ast->left == NULL && ast->right != NULL) {
-                lda_rvalue(ast->right, csize(NULL));
-                emit("  BSA .POP");
-                emit("  CLE");
-                emit("  SZA");
-                emit("  CMA");
-                emit("  CMA");
-                emit("  CLA");
-                emit("  CIL");
-                emit("  BSA .PUSH");
-            } else
-                 error("err !");
+            lda_rvalue(ast->left, csize(NULL));
+            emit("  BSA .POP");
+            emit("  CLE");
+            emit("  SZA");
+            emit("  CME");
+            emit("  CME");
+            emit("  CLA");
+            emit("  CIR");
+            emit("  BSA .PUSH");
             break;
         }
         case '<':
@@ -822,8 +869,11 @@ static void emit_func_body(Ast *ast)
             emit(".L%d,  NOP", r+1);
             break;
         }
-    }
+        default: 
+            error("%c", ast->ival);
+        }
     break;
+                      }
     case AST_LITERAL:
         lda_rvalue(ast, csize(NULL));
         break;

@@ -482,7 +482,7 @@ static Ast *unary_expr()
         return ast_uop(AST_ADDR, cast_expr());
     }
     else if(is_punct(tok, '!')) {
-        return ast_uop(tok->punct, cast_expr());
+        return ast_binop(tok->punct, cast_expr(), NULL);
     }
     else if(is_punct(tok, '+') || is_punct(tok, '-') ||is_punct(tok, '~'))  {
         error("");
@@ -651,11 +651,6 @@ static Ast *ast_uop(int type, Ast *u)
 
     ast->type = type;
     ast->operand = u;
-    /*
-    if(type == AST_DEREF && u->ctype->type == CTYPE_PTR || u->ctype->type == CTYPE_ARRAY) 
-        ast->ctype = u->ctype->ptr;
-    else
-    */
     ast->ctype = u->ctype;
 
     return ast;
@@ -761,6 +756,10 @@ static Ast *ast_binop(int punct, Ast *left, Ast *right)
         fprintf(stderr, "err: %d %d\n", left->ctype->type, right->ctype->type);
         error("%c %d", punct, left->type);
     }
+    if(left->ctype->type < right->ctype->type)
+        swap(left, right);
+    if(punct != '=' && left->ctype->type == CTYPE_PTR && right->ctype->type == CTYPE_INT)
+        ast->ctype = left->ctype->ptr;
     return ast;
 }
 
